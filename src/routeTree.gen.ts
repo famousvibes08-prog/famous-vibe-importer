@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedVibesRouteImport } from './routes/_authenticated/vibes'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -28,6 +29,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedVibesRoute = AuthenticatedVibesRouteImport.update({
   id: '/vibes',
   path: '/vibes',
@@ -37,10 +43,12 @@ const AuthenticatedVibesRoute = AuthenticatedVibesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/vibes': typeof AuthenticatedVibesRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/vibes': typeof AuthenticatedVibesRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -48,18 +56,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/vibes': typeof AuthenticatedVibesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/vibes'
+  fullPaths: '/' | '/auth' | '/create' | '/vibes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/vibes' | '/'
+  to: '/auth' | '/create' | '/vibes' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/create'
     | '/_authenticated/vibes'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/create': {
+      id: '/_authenticated/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof AuthenticatedCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vibes': {
       id: '/_authenticated/vibes'
       path: '/vibes'
@@ -103,11 +120,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedVibesRoute: typeof AuthenticatedVibesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedVibesRoute: AuthenticatedVibesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
