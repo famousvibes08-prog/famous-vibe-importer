@@ -9,7 +9,7 @@ import { PostCard } from "@/components/famous/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFeed } from "@/lib/famous.functions";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "FamousVibe — Your feed" },

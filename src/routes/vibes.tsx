@@ -8,7 +8,7 @@ import { CommentsSheet } from "@/components/famous/CommentsSheet";
 import { VibeCard } from "@/components/famous/VibeCard";
 import { getVibes } from "@/lib/famous.functions";
 
-export const Route = createFileRoute("/_authenticated/vibes")({
+export const Route = createFileRoute("/vibes")({
   head: () => ({
     meta: [
       { title: "Vibes — Short videos on FamousVibe" },
