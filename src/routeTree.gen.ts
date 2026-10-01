@@ -9,14 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as VibesRouteImport } from './routes/vibes'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
-import { Route as AuthenticatedVibesRouteImport } from './routes/_authenticated/vibes'
-import { Route as AuthenticatedProfileUserIdRouteImport } from './routes/_authenticated/profile.$userId'
+import { Route as ProfileUserIdRouteImport } from './routes/profile.$userId'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -26,10 +31,10 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const VibesRoute = VibesRouteImport.update({
+  id: '/vibes',
+  path: '/vibes',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
   id: '/create',
@@ -41,68 +46,72 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedVibesRoute = AuthenticatedVibesRouteImport.update({
-  id: '/vibes',
-  path: '/vibes',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedProfileUserIdRoute =
-  AuthenticatedProfileUserIdRouteImport.update({
-    id: '/$userId',
-    path: '/$userId',
-    getParentRoute: () => AuthenticatedProfileRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/vibes': typeof VibesRoute
   '/create': typeof AuthenticatedCreateRoute
-  '/profile': typeof AuthenticatedProfileRouteWithChildren
-  '/vibes': typeof AuthenticatedVibesRoute
-  '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/vibes': typeof VibesRoute
   '/create': typeof AuthenticatedCreateRoute
-  '/profile': typeof AuthenticatedProfileRouteWithChildren
-  '/vibes': typeof AuthenticatedVibesRoute
-  '/': typeof AuthenticatedIndexRoute
-  '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/vibes': typeof VibesRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
-  '/_authenticated/profile': typeof AuthenticatedProfileRouteWithChildren
-  '/_authenticated/vibes': typeof AuthenticatedVibesRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/profile/$userId': typeof AuthenticatedProfileUserIdRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/create' | '/profile' | '/vibes' | '/profile/$userId'
+    '/' | '/auth' | '/vibes' | '/create' | '/profile' | '/profile/$userId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/create' | '/profile' | '/vibes' | '/' | '/profile/$userId'
+  to: '/' | '/auth' | '/vibes' | '/create' | '/profile' | '/profile/$userId'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
     | '/auth'
+    | '/vibes'
     | '/_authenticated/create'
     | '/_authenticated/profile'
-    | '/_authenticated/vibes'
-    | '/_authenticated/'
-    | '/_authenticated/profile/$userId'
+    | '/profile/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  VibesRoute: typeof VibesRoute
+  ProfileUserIdRoute: typeof ProfileUserIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -117,12 +126,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/vibes': {
+      id: '/vibes'
+      path: '/vibes'
+      fullPath: '/vibes'
+      preLoaderRoute: typeof VibesRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/create': {
       id: '/_authenticated/create'
@@ -138,54 +147,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/vibes': {
-      id: '/_authenticated/vibes'
-      path: '/vibes'
-      fullPath: '/vibes'
-      preLoaderRoute: typeof AuthenticatedVibesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/profile/$userId': {
-      id: '/_authenticated/profile/$userId'
-      path: '/$userId'
+    '/profile/$userId': {
+      id: '/profile/$userId'
+      path: '/profile/$userId'
       fullPath: '/profile/$userId'
-      preLoaderRoute: typeof AuthenticatedProfileUserIdRouteImport
-      parentRoute: typeof AuthenticatedProfileRoute
+      preLoaderRoute: typeof ProfileUserIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AuthenticatedProfileRouteChildren {
-  AuthenticatedProfileUserIdRoute: typeof AuthenticatedProfileUserIdRoute
-}
-
-const AuthenticatedProfileRouteChildren: AuthenticatedProfileRouteChildren = {
-  AuthenticatedProfileUserIdRoute: AuthenticatedProfileUserIdRoute,
-}
-
-const AuthenticatedProfileRouteWithChildren =
-  AuthenticatedProfileRoute._addFileChildren(AuthenticatedProfileRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRouteWithChildren
-  AuthenticatedVibesRoute: typeof AuthenticatedVibesRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
-  AuthenticatedProfileRoute: AuthenticatedProfileRouteWithChildren,
-  AuthenticatedVibesRoute: AuthenticatedVibesRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  VibesRoute: VibesRoute,
+  ProfileUserIdRoute: ProfileUserIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
