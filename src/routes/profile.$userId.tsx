@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProfileView } from "@/components/famous/ProfileView";
 
-export const Route = createFileRoute("/_authenticated/profile/$userId")({
+export const Route = createFileRoute("/profile/$userId")({
   head: () => ({
     meta: [
       { title: "Creator profile — FamousVibe" },

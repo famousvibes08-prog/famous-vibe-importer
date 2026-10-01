@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { optionalSupabaseAuth } from "./optional-auth";
 import {
   getFeedFor,
   getVibesFor,
@@ -23,11 +24,11 @@ import {
 const postIdSchema = z.object({ postId: z.string().uuid() });
 
 export const getFeed = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .handler(async ({ context }) => getFeedFor(context.supabase, context.userId));
 
 export const getVibes = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .handler(async ({ context }) => getVibesFor(context.supabase, context.userId));
 
 export const createPost = createServerFn({ method: "POST" })
@@ -59,7 +60,7 @@ export const toggleSave = createServerFn({ method: "POST" })
   );
 
 export const getComments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .inputValidator((data: unknown) => postIdSchema.parse(data))
   .handler(async ({ data, context }) => listComments(context.supabase, data.postId));
 
@@ -114,22 +115,26 @@ export const followUser = createServerFn({ method: "POST" })
   );
 
 export const getProfile = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .inputValidator((data: unknown) =>
     z.object({ userId: z.string().uuid().optional() }).parse(data ?? {}),
   )
-  .handler(async ({ data, context }) =>
-    loadProfile(context.supabase, context.userId, data.userId ?? context.userId),
-  );
+  .handler(async ({ data, context }) => {
+    const target = data.userId ?? context.userId;
+    if (!target) throw new Error("Sign in to view your profile");
+    return loadProfile(context.supabase, context.userId, target);
+  });
 
 export const getUserPosts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .inputValidator((data: unknown) =>
     z.object({ userId: z.string().uuid().optional() }).parse(data ?? {}),
   )
-  .handler(async ({ data, context }) =>
-    loadUserPosts(context.supabase, context.userId, data.userId ?? context.userId),
-  );
+  .handler(async ({ data, context }) => {
+    const target = data.userId ?? context.userId;
+    if (!target) throw new Error("Sign in to view your posts");
+    return loadUserPosts(context.supabase, context.userId, target);
+  });
 
 export const getSavedPosts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
