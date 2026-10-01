@@ -26,6 +26,7 @@ export type FeedPost = {
   liked: boolean;
   saved: boolean;
   myRating: number | null;
+  followingAuthor: boolean;
 };
 
 const POST_COLUMNS =
@@ -55,7 +56,7 @@ async function decorate(
   const authorIds = Array.from(new Set(rows.map((r) => r["user_id"] as string)));
 
   const empty = { data: [] as Array<{ post_id: string; stars?: number }> };
-  const [profiles, likes, saves, ratings] = await Promise.all([
+  const [profiles, likes, saves, ratings, follows] = await Promise.all([
     supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", authorIds),
     userId
       ? supabase.from("likes").select("post_id").eq("user_id", userId).in("post_id", ids)
@@ -66,7 +67,11 @@ async function decorate(
     userId
       ? supabase.from("ratings").select("post_id,stars").eq("user_id", userId).in("post_id", ids)
       : empty,
+    userId
+      ? supabase.from("follows").select("following_id").eq("follower_id", userId).in("following_id", authorIds)
+      : { data: [] as Array<{ following_id: string }> },
   ]);
+  const followSet = new Set((follows.data ?? []).map((r) => r.following_id));
 
   const authorMap = new Map<string, Author>(
     (profiles.data ?? []).map((p) => [p.id, toAuthor(p)] as const),
@@ -95,6 +100,7 @@ async function decorate(
       liked: likedSet.has(r["id"] as string),
       saved: savedSet.has(r["id"] as string),
       myRating: ratingMap.get(r["id"] as string) ?? null,
+      followingAuthor: followSet.has(authorId),
     };
   });
 }
@@ -395,4 +401,15 @@ export async function updateOwnProfile(
     .eq("id", userId);
   if (error) throw new Error(error.message);
   return { ok: true };
+}
+
+export async function resolveShortCode(supabase: Client, code: string) {
+  const { data } = await supabase
+    .from("posts")
+    .select("id")
+    .gte("id", `${code}-0000-0000-0000-000000000000`)
+    .lte("id", `${code}-ffff-ffff-ffff-ffffffffffff`)
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
 }

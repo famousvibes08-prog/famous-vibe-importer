@@ -19,6 +19,7 @@ import {
   updateOwnProfile,
   upsertInterest,
   upsertRating,
+  resolveShortCode,
 } from "./famous.server";
 
 const postIdSchema = z.object({ postId: z.string().uuid() });
@@ -157,3 +158,8 @@ export const updateProfile = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => updateOwnProfile(context.supabase, context.userId, data));
+
+export const resolveShortLink = createServerFn({ method: "GET" })
+  .middleware([optionalSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ code: z.string().regex(/^[0-9a-f]{8}$/) }).parse(data))
+  .handler(async ({ data, context }) => ({ postId: await resolveShortCode(context.supabase, data.code) }));
