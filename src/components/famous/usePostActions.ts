@@ -11,6 +11,7 @@ import {
   ratePost,
   toggleLike,
   toggleSave,
+  followUser,
 } from "@/lib/famous.functions";
 import { getSignedUrl } from "@/lib/media";
 import { downloadWatermarked } from "@/lib/watermark";
@@ -24,12 +25,14 @@ export function usePostActions() {
   const rate = useServerFn(ratePost);
   const interest = useServerFn(setInterest);
   const report = useServerFn(reportPost);
+  const follow = useServerFn(followUser);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["feed"] });
     queryClient.invalidateQueries({ queryKey: ["vibes"] });
     queryClient.invalidateQueries({ queryKey: ["user-posts"] });
     queryClient.invalidateQueries({ queryKey: ["saved-posts"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
   };
 
   const guard = async (fn: () => Promise<unknown>) => {
@@ -64,6 +67,11 @@ export function usePostActions() {
       guard(async () => {
         await report({ data: { postId, reason: "Reported from feed" } });
         toast.success("Thanks — our team will review this post");
+      }),
+    onFollow: (targetId: string) =>
+      guard(async () => {
+        const res = await follow({ data: { targetId } });
+        toast.success(res.following ? "Following" : "Unfollowed");
       }),
     onDownload: async (post: FeedPost) => {
       const url = await getSignedUrl("media", post.mediaUrl);
