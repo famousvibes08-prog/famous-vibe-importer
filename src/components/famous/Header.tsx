@@ -1,18 +1,19 @@
-import { Link } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { LogIn, LogOut } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { useSessionUser } from "@/hooks/use-session";
 
 export function Header() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { signedIn } = useSessionUser();
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/", replace: true });
   }
 
   return (
@@ -21,14 +22,25 @@ export function Header() {
         <Link to="/" className="font-script text-brand text-3xl leading-none">
           FamousVibe
         </Link>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          aria-label="Sign out"
-          className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <LogOut className="size-5" />
-        </button>
+        {signedIn ? (
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LogOut className="size-5" />
+          </button>
+        ) : (
+          <Link
+            to="/auth"
+            aria-label="Sign in"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-foreground"
+          >
+            <LogIn className="size-4" />
+            Sign in
+          </Link>
+        )}
       </div>
     </header>
   );
