@@ -16,6 +16,7 @@ import { Route as VibesRouteImport } from './routes/vibes'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ProfileUserIdRouteImport } from './routes/profile.$userId'
+import { Route as VCodeRouteImport } from './routes/v.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,11 @@ const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
   path: '/profile/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VCodeRoute = VCodeRouteImport.update({
+  id: '/v/$code',
+  path: '/v/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/profile/$userId': typeof ProfileUserIdRoute
+  '/v/$code': typeof VCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/create': typeof AuthenticatedCreateRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/profile/$userId': typeof ProfileUserIdRoute
+  '/v/$code': typeof VCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,13 +85,27 @@ export interface FileRoutesById {
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/profile/$userId': typeof ProfileUserIdRoute
+  '/v/$code': typeof VCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/vibes' | '/create' | '/profile' | '/profile/$userId'
+    | '/'
+    | '/auth'
+    | '/vibes'
+    | '/create'
+    | '/profile'
+    | '/profile/$userId'
+    | '/v/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/vibes' | '/create' | '/profile' | '/profile/$userId'
+  to:
+    | '/'
+    | '/auth'
+    | '/vibes'
+    | '/create'
+    | '/profile'
+    | '/profile/$userId'
+    | '/v/$code'
   id:
     | '__root__'
     | '/'
@@ -93,6 +115,7 @@ export interface FileRouteTypes {
     | '/_authenticated/create'
     | '/_authenticated/profile'
     | '/profile/$userId'
+    | '/v/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -101,6 +124,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   VibesRoute: typeof VibesRoute
   ProfileUserIdRoute: typeof ProfileUserIdRoute
+  VCodeRoute: typeof VCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v/$code': {
+      id: '/v/$code'
+      path: '/v/$code'
+      fullPath: '/v/$code'
+      preLoaderRoute: typeof VCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -176,6 +207,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   VibesRoute: VibesRoute,
   ProfileUserIdRoute: ProfileUserIdRoute,
+  VCodeRoute: VCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
