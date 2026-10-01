@@ -47,18 +47,25 @@ function toAuthor(row: {
 
 async function decorate(
   supabase: Client,
-  userId: string,
+  userId: string | null,
   rows: Array<Record<string, unknown>>,
 ): Promise<FeedPost[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r["id"] as string);
   const authorIds = Array.from(new Set(rows.map((r) => r["user_id"] as string)));
 
+  const empty = { data: [] as Array<{ post_id: string; stars?: number }> };
   const [profiles, likes, saves, ratings] = await Promise.all([
     supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", authorIds),
-    supabase.from("likes").select("post_id").eq("user_id", userId).in("post_id", ids),
-    supabase.from("saves").select("post_id").eq("user_id", userId).in("post_id", ids),
-    supabase.from("ratings").select("post_id,stars").eq("user_id", userId).in("post_id", ids),
+    userId
+      ? supabase.from("likes").select("post_id").eq("user_id", userId).in("post_id", ids)
+      : empty,
+    userId
+      ? supabase.from("saves").select("post_id").eq("user_id", userId).in("post_id", ids)
+      : empty,
+    userId
+      ? supabase.from("ratings").select("post_id,stars").eq("user_id", userId).in("post_id", ids)
+      : empty,
   ]);
 
   const authorMap = new Map<string, Author>(
@@ -109,11 +116,10 @@ function rank(posts: FeedPost[]): FeedPost[] {
     .map((entry) => entry.post);
 }
 
-async function loadRankedFeed(supabase: Client, userId: string, vibesOnly: boolean) {
-  const { data: interests } = await supabase
-    .from("interests")
-    .select("post_id,state")
-    .eq("user_id", userId);
+async function loadRankedFeed(supabase: Client, userId: string | null, vibesOnly: boolean) {
+  const { data: interests } = userId
+    ? await supabase.from("interests").select("post_id,state").eq("user_id", userId)
+    : { data: [] as Array<{ post_id: string; state: string }> };
   const excluded = new Set(
     (interests ?? []).filter((i) => i.state === "not_interested").map((i) => i.post_id),
   );
@@ -134,11 +140,11 @@ async function loadRankedFeed(supabase: Client, userId: string, vibesOnly: boole
   return rank(decorated.filter((p) => !(p.myRating !== null && p.myRating <= 2)));
 }
 
-export function getFeedFor(supabase: Client, userId: string) {
+export function getFeedFor(supabase: Client, userId: string | null) {
   return loadRankedFeed(supabase, userId, false);
 }
 
-export function getVibesFor(supabase: Client, userId: string) {
+export function getVibesFor(supabase: Client, userId: string | null) {
   return loadRankedFeed(supabase, userId, true);
 }
 
@@ -304,7 +310,7 @@ export async function toggleFollowFor(supabase: Client, userId: string, targetId
   return { following: true };
 }
 
-export async function loadProfile(supabase: Client, userId: string, targetId: string) {
+export async function loadProfile(supabase: Client, userId: string | null, targetId: string) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("id,username,display_name,bio,avatar_url")
@@ -323,12 +329,14 @@ export async function loadProfile(supabase: Client, userId: string, targetId: st
       .from("follows")
       .select("following_id", { count: "exact", head: true })
       .eq("follower_id", targetId),
-    supabase
-      .from("follows")
-      .select("follower_id")
-      .eq("follower_id", userId)
-      .eq("following_id", targetId)
-      .maybeSingle(),
+    userId
+      ? supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", userId)
+          .eq("following_id", targetId)
+          .maybeSingle()
+      : { data: null },
   ]);
 
   return {
@@ -347,7 +355,7 @@ export async function loadProfile(supabase: Client, userId: string, targetId: st
   };
 }
 
-export async function loadUserPosts(supabase: Client, userId: string, targetId: string) {
+export async function loadUserPosts(supabase: Client, userId: string | null, targetId: string) {
   const { data, error } = await supabase
     .from("posts")
     .select(POST_COLUMNS)
