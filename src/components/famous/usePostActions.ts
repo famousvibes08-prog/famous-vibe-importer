@@ -1,6 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   reportPost,
@@ -15,6 +18,7 @@ import type { FeedPost } from "@/lib/famous.server";
 
 export function usePostActions() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const like = useServerFn(toggleLike);
   const save = useServerFn(toggleSave);
   const rate = useServerFn(ratePost);
@@ -29,6 +33,12 @@ export function usePostActions() {
   };
 
   const guard = async (fn: () => Promise<unknown>) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      toast.message("Sign in to do that");
+      navigate({ to: "/auth" });
+      return;
+    }
     try {
       await fn();
       refresh();
