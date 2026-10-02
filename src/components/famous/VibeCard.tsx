@@ -150,7 +150,7 @@ export function VibeCard({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
 
-      <div className="absolute right-2 bottom-28 flex flex-col items-center gap-5">
+      <div className="absolute right-2 bottom-28 z-10 flex flex-col items-center gap-5">
         <button
           type="button"
           aria-label={liked ? "Unlike" : "Like"}
@@ -196,7 +196,7 @@ export function VibeCard({
         </Avatar>
       </div>
 
-      <div className="absolute inset-x-0 bottom-24 space-y-2 pr-20 pl-4">
+      <div className="pointer-events-none absolute inset-x-0 bottom-24 space-y-2 pr-20 pl-4 [&>*]:pointer-events-auto">
         <div className="flex items-center gap-2">
           <Link to="/profile/$userId" params={{ userId: post.author.id }} className="ring-brand rounded-full">
             <Avatar className="size-9 border border-border">
