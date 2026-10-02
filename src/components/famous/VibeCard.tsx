@@ -47,7 +47,7 @@ export function VibeCard({
   const mediaUrl = useSignedUrl("media", post.mediaUrl);
   const avatarUrl = useSignedUrl("avatars", post.author.avatarUrl);
   const actions = usePostActions();
-  const { user } = useSessionUser();
+  const { userId } = useSessionUser();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTap = useRef(0);
@@ -85,7 +85,7 @@ export function VibeCard({
 
   const doLike = (forceOn = false) => {
     if (forceOn && liked) return;
-    if (!user) {
+    if (!userId) {
       void actions.onLike(post.id);
       return;
     }
@@ -115,7 +115,7 @@ export function VibeCard({
     }, 300);
   };
 
-  const isSelf = user?.id === post.author.id;
+  const isSelf = userId === post.author.id;
 
   return (
     <div
@@ -217,7 +217,7 @@ export function VibeCard({
             <button
               type="button"
               onClick={() => {
-                if (user) setFollowing((f) => !f);
+                if (userId) setFollowing((f) => !f);
                 void actions.onFollow(post.author.id);
               }}
               className={cn(
