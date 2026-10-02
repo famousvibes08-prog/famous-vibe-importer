@@ -47,7 +47,7 @@ export function VibeCard({
   const mediaUrl = useSignedUrl("media", post.mediaUrl);
   const avatarUrl = useSignedUrl("avatars", post.author.avatarUrl);
   const actions = usePostActions();
-  const { user } = useSessionUser();
+  const { userId } = useSessionUser();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTap = useRef(0);
@@ -85,7 +85,7 @@ export function VibeCard({
 
   const doLike = (forceOn = false) => {
     if (forceOn && liked) return;
-    if (!user) {
+    if (!userId) {
       void actions.onLike(post.id);
       return;
     }
@@ -115,7 +115,7 @@ export function VibeCard({
     }, 300);
   };
 
-  const isSelf = user?.id === post.author.id;
+  const isSelf = userId === post.author.id;
 
   return (
     <div
@@ -150,7 +150,7 @@ export function VibeCard({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
 
-      <div className="absolute right-2 bottom-28 flex flex-col items-center gap-5">
+      <div className="absolute right-2 bottom-28 z-10 flex flex-col items-center gap-5">
         <button
           type="button"
           aria-label={liked ? "Unlike" : "Like"}
@@ -196,7 +196,7 @@ export function VibeCard({
         </Avatar>
       </div>
 
-      <div className="absolute inset-x-0 bottom-24 space-y-2 pr-20 pl-4">
+      <div className="pointer-events-none absolute inset-x-0 bottom-24 space-y-2 pr-20 pl-4 [&>*]:pointer-events-auto">
         <div className="flex items-center gap-2">
           <Link to="/profile/$userId" params={{ userId: post.author.id }} className="ring-brand rounded-full">
             <Avatar className="size-9 border border-border">
@@ -217,7 +217,7 @@ export function VibeCard({
             <button
               type="button"
               onClick={() => {
-                if (user) setFollowing((f) => !f);
+                if (userId) setFollowing((f) => !f);
                 void actions.onFollow(post.author.id);
               }}
               className={cn(
