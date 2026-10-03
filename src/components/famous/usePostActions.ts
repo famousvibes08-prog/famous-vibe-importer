@@ -40,13 +40,15 @@ export function usePostActions() {
     if (!data.session) {
       toast.message("Sign in to do that");
       navigate({ to: "/auth" });
-      return;
+      return false;
     }
     try {
       await fn();
       refresh();
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
+      return false;
     }
   };
 

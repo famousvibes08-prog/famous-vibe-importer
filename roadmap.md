@@ -1,0 +1,3 @@
+- [x] Give the bottom bar one clearly marked Reels video tab.
+- [x] Make reel actions and mobile-style sharing work, including signed-out prompts.
+- [x] Verify the feed and action sheets in the browser, including signed-in like persistence and short-link opening.

@@ -3,12 +3,13 @@ import { Link } from "@tanstack/react-router";
 import { Heart, MessageCircle, MoreHorizontal, Music2, Send } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { ReelActionSheet } from "./ReelActionSheet";
+import { ReelShareSheet } from "./ReelShareSheet";
 import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSessionUser } from "@/hooks/use-session";
 import { useSignedUrl } from "@/lib/media";
-import { sharePost } from "@/lib/share";
 import { cn } from "@/lib/utils";
 import type { FeedPost } from "@/lib/famous.server";
 
@@ -57,6 +58,7 @@ export function VibeCard({
   const [hearts, setHearts] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [bump, setBump] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     setLiked(post.liked);
@@ -89,10 +91,16 @@ export function VibeCard({
       void actions.onLike(post.id);
       return;
     }
-    setLiked(!liked);
-    setLikeCount((c) => c + (liked ? -1 : 1));
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => c + (wasLiked ? -1 : 1));
     setBump((b) => b + 1);
-    void actions.onLike(post.id);
+    void actions.onLike(post.id).then((success) => {
+      if (!success) {
+        setLiked(wasLiked);
+        setLikeCount((c) => c + (wasLiked ? 1 : -1));
+      }
+    });
   };
 
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -100,7 +108,7 @@ export function VibeCard({
     if (now - lastTap.current < 300) {
       const rect = e.currentTarget.getBoundingClientRect();
       const id = now;
-      setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+      if (userId) setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
       setTimeout(() => setHearts((h) => h.filter((x) => x.id !== id)), 900);
       doLike(true);
       lastTap.current = 0;
@@ -151,11 +159,12 @@ export function VibeCard({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
 
       <div className="absolute right-2 bottom-28 z-10 flex flex-col items-center gap-5">
-        <button
+        <Button
+          variant="ghost"
           type="button"
           aria-label={liked ? "Unlike" : "Like"}
           onClick={() => doLike()}
-          className="flex flex-col items-center gap-1"
+          className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Heart
             key={bump}
@@ -168,28 +177,30 @@ export function VibeCard({
           <span key={`c${likeCount}`} className="count-tick text-xs font-semibold">
             {likeCount}
           </span>
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
           aria-label="Comments"
           onClick={() => onOpenComments(post.id)}
-          className="flex flex-col items-center gap-1"
+          className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <MessageCircle className="size-8" />
           <span className="text-xs font-semibold">{post.commentCount}</span>
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
           aria-label="Share"
-          onClick={() => sharePost(post.id, post.caption)}
-          className="flex flex-col items-center gap-1"
+          onClick={() => setShareOpen(true)}
+          className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Send className="size-8" />
           <span className="text-xs font-semibold">Share</span>
-        </button>
-        <button type="button" aria-label="More options" onClick={() => setMenuOpen(true)}>
+        </Button>
+        <Button variant="ghost" size="icon" type="button" aria-label="More options" title="More options" onClick={() => setMenuOpen(true)} className="size-12 hover:bg-transparent [&_svg]:size-8">
           <MoreHorizontal className="size-8" />
-        </button>
+        </Button>
         <Avatar className="size-9 rounded-lg border-2 border-foreground">
           {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
           <AvatarFallback className="rounded-lg bg-brand text-[10px]">♪</AvatarFallback>
@@ -214,21 +225,29 @@ export function VibeCard({
             @{post.author.username}
           </Link>
           {!isSelf ? (
-            <button
+            <Button
+              variant="ghost"
               type="button"
               onClick={() => {
-                if (userId) setFollowing((f) => !f);
-                void actions.onFollow(post.author.id);
+                if (!userId) {
+                  void actions.onFollow(post.author.id);
+                  return;
+                }
+                const wasFollowing = following;
+                setFollowing(!wasFollowing);
+                void actions.onFollow(post.author.id).then((success) => {
+                  if (!success) setFollowing(wasFollowing);
+                });
               }}
               className={cn(
-                "rounded-lg border px-3 py-1 text-xs font-semibold transition-all",
+                "h-8 rounded-md border px-3 text-xs font-semibold transition-all",
                 following
                   ? "border-border bg-surface-2/60 text-foreground"
                   : "border-transparent bg-brand text-primary-foreground shadow-neon",
               )}
             >
               {following ? "Following" : "Follow"}
-            </button>
+            </Button>
           ) : null}
         </div>
         {post.caption ? <p className="line-clamp-2 text-sm">{post.caption}</p> : null}
@@ -247,6 +266,7 @@ export function VibeCard({
       </div>
 
       <ReelActionSheet open={menuOpen} onOpenChange={setMenuOpen} post={post} />
+      <ReelShareSheet open={shareOpen} onOpenChange={setShareOpen} post={post} />
     </div>
   );
 }

@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/create")({
       },
       { property: "og:title", content: "Create a post on FamousVibe" },
       { property: "og:description", content: "Publish photos and short vibe videos in seconds." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CreatePage,

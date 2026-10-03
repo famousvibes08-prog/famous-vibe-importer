@@ -18,6 +18,8 @@ export const Route = createFileRoute("/vibes")({
       },
       { property: "og:title", content: "Vibes on FamousVibe" },
       { property: "og:description", content: "Full-screen short videos from the FamousVibe community." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: VibesPage,
