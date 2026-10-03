@@ -11,6 +11,8 @@ export const Route = createFileRoute("/_authenticated/profile")({
       },
       { property: "og:title", content: "Your profile on FamousVibe" },
       { property: "og:description", content: "Your posts, saved vibes and follower stats." },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: () => <ProfileView />,

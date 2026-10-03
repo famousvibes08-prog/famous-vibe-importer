@@ -229,8 +229,15 @@ export function VibeCard({
               variant="ghost"
               type="button"
               onClick={() => {
-                if (userId) setFollowing((f) => !f);
-                void actions.onFollow(post.author.id);
+                if (!userId) {
+                  void actions.onFollow(post.author.id);
+                  return;
+                }
+                const wasFollowing = following;
+                setFollowing(!wasFollowing);
+                void actions.onFollow(post.author.id).then((success) => {
+                  if (!success) setFollowing(wasFollowing);
+                });
               }}
               className={cn(
                 "h-8 rounded-md border px-3 text-xs font-semibold transition-all",

@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export function StarRating({
   value,
@@ -17,14 +18,15 @@ export function StarRating({
   return (
     <div className="flex items-center gap-0.5" role="group" aria-label="Rate this post">
       {[1, 2, 3, 4, 5].map((star) => (
-        <button
+        <Button
           key={star}
+          variant="ghost"
           type="button"
           aria-label={`${star} star${star > 1 ? "s" : ""}`}
           onMouseEnter={() => setHover(star)}
           onMouseLeave={() => setHover(null)}
           onClick={() => onRate(star)}
-          className="p-0.5"
+          className="size-7 p-0 hover:bg-transparent [&_svg]:size-4"
         >
           <Star
             className={cn(
@@ -32,7 +34,7 @@ export function StarRating({
               star <= shown ? "fill-star text-star" : "text-muted-foreground",
             )}
           />
-        </button>
+        </Button>
       ))}
     </div>
   );

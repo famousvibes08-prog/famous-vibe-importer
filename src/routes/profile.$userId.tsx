@@ -11,6 +11,8 @@ export const Route = createFileRoute("/profile/$userId")({
       },
       { property: "og:title", content: "Creator profile on FamousVibe" },
       { property: "og:description", content: "Photos, vibes and ratings from this creator." },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CreatorProfile,
