@@ -31,8 +31,8 @@ export function ReelShareSheet({ post, open, onOpenChange }: {
           </Button>)}
         </div>
         <Button className="h-12 w-full bg-brand" onClick={() => void shareNatively(post.id, post.caption)}>
-          {typeof navigator !== "undefined" && navigator.share ? <Share2 /> : <Send />}
-          {typeof navigator !== "undefined" && navigator.share ? "More apps" : "Copy link"}
+          {typeof navigator !== "undefined" && "share" in navigator ? <Share2 /> : <Send />}
+          {typeof navigator !== "undefined" && "share" in navigator ? "More apps" : "Copy link"}
         </Button>
       </div>
     </DrawerContent>
