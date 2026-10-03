@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addComment, getComments } from "@/lib/famous.functions";
 import { useSignedUrl } from "@/lib/media";
+import { useSessionUser } from "@/hooks/use-session";
 
 function CommentAvatar({ path, name }: { path: string | null; name: string }) {
   const url = useSignedUrl("avatars", path);
@@ -32,18 +34,23 @@ export function CommentsSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const [body, setBody] = useState("");
+  const { signedIn, loading: sessionLoading } = useSessionUser();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchComments = useServerFn(getComments);
   const submitComment = useServerFn(addComment);
 
   const { data, isLoading } = useQuery({
     queryKey: ["comments", postId],
-    queryFn: () => fetchComments({ data: { postId: postId! } }),
+    queryFn: () => postId ? fetchComments({ data: { postId } }) : Promise.resolve([]),
     enabled: Boolean(postId) && open,
   });
 
   const mutation = useMutation({
-    mutationFn: (text: string) => submitComment({ data: { postId: postId!, body: text } }),
+    mutationFn: (text: string) => {
+      if (!postId) throw new Error("No post selected");
+      return submitComment({ data: { postId, body: text } });
+    },
     onSuccess: () => {
       setBody("");
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
@@ -66,7 +73,7 @@ export function CommentsSheet({
           ) : (data?.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">No comments yet. Be the first.</p>
           ) : (
-            data!.map((comment) => (
+            data?.map((comment) => (
               <div key={comment.id} className="flex gap-3">
                 <CommentAvatar path={comment.author.avatarUrl} name={comment.author.username} />
                 <div className="min-w-0">
@@ -82,18 +89,21 @@ export function CommentsSheet({
           className="safe-bottom flex items-center gap-2 border-t border-border px-4 py-3"
           onSubmit={(event) => {
             event.preventDefault();
-            if (body.trim()) mutation.mutate(body.trim());
+            if (!signedIn) {
+              onOpenChange(false);
+              navigate({ to: "/auth" });
+            } else if (body.trim()) mutation.mutate(body.trim());
           }}
         >
           <Input
             value={body}
             onChange={(event) => setBody(event.target.value)}
-            placeholder="Add a comment…"
+            placeholder={signedIn ? "Add a comment…" : "Sign in to comment…"}
             maxLength={1000}
             className="bg-surface-2"
           />
-          <Button type="submit" disabled={!body.trim() || mutation.isPending} className="bg-brand">
-            Post
+          <Button type="submit" disabled={sessionLoading || (signedIn && (!body.trim() || mutation.isPending))} className="bg-brand">
+            {signedIn ? "Post" : "Sign in"}
           </Button>
         </form>
       </SheetContent>

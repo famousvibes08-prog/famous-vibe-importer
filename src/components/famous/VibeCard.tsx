@@ -91,10 +91,16 @@ export function VibeCard({
       void actions.onLike(post.id);
       return;
     }
-    setLiked(!liked);
-    setLikeCount((c) => c + (liked ? -1 : 1));
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => c + (wasLiked ? -1 : 1));
     setBump((b) => b + 1);
-    void actions.onLike(post.id);
+    void actions.onLike(post.id).then((success) => {
+      if (!success) {
+        setLiked(wasLiked);
+        setLikeCount((c) => c + (wasLiked ? 1 : -1));
+      }
+    });
   };
 
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
