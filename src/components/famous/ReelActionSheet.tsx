@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Bookmark, Download, EyeOff, Flag, Link2, UserRound } from "lucide-react";
-import { toast } from "sonner";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
