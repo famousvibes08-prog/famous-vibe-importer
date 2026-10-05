@@ -1,3 +1,5 @@
-- [x] Give the bottom bar one clearly marked Reels video tab.
-- [x] Make reel actions and mobile-style sharing work, including signed-out prompts.
-- [x] Verify the feed and action sheets in the browser, including signed-in like persistence and short-link opening.
+- [ ] Add the FamousVibe logo across app branding and installable app icons.
+- [ ] Add persistent 24-hour Stories with upload, top story tray, and full-screen viewer.
+- [ ] Refine Reels playback and controls: native sharing, bookmark placement, menu actions, and live interactions.
+- [ ] Update original-quality download with audio plus a 3-second FamousVibe creator end card.
+- [ ] Verify the main signed-in and signed-out flows on desktop and mobile.
