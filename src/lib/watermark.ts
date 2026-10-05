@@ -107,8 +107,14 @@ export async function downloadWatermarkedVideo(src: string, username: string) {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable");
 
-  const stream = canvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+  const videoStream = canvas.captureStream(30);
+  const sourceStream = typeof video.captureStream === "function" ? video.captureStream() : null;
+  const stream = new MediaStream([
+    ...videoStream.getVideoTracks(),
+    ...(sourceStream?.getAudioTracks() ?? []),
+  ]);
+  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm";
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (event) => {
     if (event.data.size > 0) chunks.push(event.data);
@@ -119,9 +125,27 @@ export async function downloadWatermarkedVideo(src: string, username: string) {
   });
 
   let raf = 0;
+  let endCard = false;
   const renderFrame = () => {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    drawWatermark(ctx, canvas.width, canvas.height, username);
+    if (endCard) {
+      ctx.fillStyle = "#08070F";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const gradient = ctx.createLinearGradient(canvas.width * 0.2, 0, canvas.width * 0.8, canvas.height);
+      gradient.addColorStop(0, "#FF2E9A");
+      gradient.addColorStop(0.52, "#A855F7");
+      gradient.addColorStop(1, "#3B82F6");
+      ctx.textAlign = "center";
+      ctx.fillStyle = gradient;
+      ctx.font = `700 ${Math.max(42, canvas.width * 0.12)}px Inter, sans-serif`;
+      ctx.fillText("FamousVibe", canvas.width / 2, canvas.height / 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `600 ${Math.max(22, canvas.width * 0.055)}px Inter, sans-serif`;
+      ctx.fillText(`@${username}`, canvas.width / 2, canvas.height / 2 + canvas.height * 0.08);
+      ctx.textAlign = "start";
+    } else {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      drawWatermark(ctx, canvas.width, canvas.height, username);
+    }
     raf = requestAnimationFrame(renderFrame);
   };
 
@@ -132,6 +156,9 @@ export async function downloadWatermarkedVideo(src: string, username: string) {
   await new Promise<void>((resolve) => {
     video.onended = () => resolve();
   });
+
+  endCard = true;
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   cancelAnimationFrame(raf);
   recorder.stop();

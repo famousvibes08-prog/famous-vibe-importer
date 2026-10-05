@@ -20,6 +20,8 @@ import {
   upsertInterest,
   upsertRating,
   resolveShortCode,
+  loadActiveStories,
+  insertStory,
 } from "./famous.server";
 
 const postIdSchema = z.object({ postId: z.string().uuid() });
@@ -31,6 +33,15 @@ export const getFeed = createServerFn({ method: "GET" })
 export const getVibes = createServerFn({ method: "GET" })
   .middleware([optionalSupabaseAuth])
   .handler(async ({ context }) => getVibesFor(context.supabase, context.userId));
+
+export const getStories = createServerFn({ method: "GET" })
+  .middleware([optionalSupabaseAuth])
+  .handler(async ({ context }) => loadActiveStories(context.supabase));
+
+export const createStory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ mediaPath: z.string().min(1), mediaType: z.enum(["image", "video"]), caption: z.string().max(500).default("") }).parse(data))
+  .handler(async ({ data, context }) => insertStory(context.supabase, context.userId, data));
 
 export const createPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

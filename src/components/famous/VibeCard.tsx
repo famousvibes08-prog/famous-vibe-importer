@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, MessageCircle, MoreHorizontal, Music2, Send } from "lucide-react";
+import { Bookmark, Heart, MessageCircle, MoreHorizontal, Music2, Send } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ReelActionSheet } from "./ReelActionSheet";
-import { ReelShareSheet } from "./ReelShareSheet";
 import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSessionUser } from "@/hooks/use-session";
 import { useSignedUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { FeedPost } from "@/lib/famous.server";
+import { shareNatively } from "@/lib/share";
 
 // Browsers block unmuted autoplay until the first user gesture. We start with sound,
 // fall back to silent playback only if blocked, and turn sound on at the first tap.
@@ -41,9 +41,11 @@ async function playWithSound(video: HTMLVideoElement) {
 export function VibeCard({
   post,
   onOpenComments,
+  compactHeight = false,
 }: {
   post: FeedPost;
   onOpenComments: (postId: string) => void;
+  compactHeight?: boolean;
 }) {
   const mediaUrl = useSignedUrl("media", post.mediaUrl);
   const avatarUrl = useSignedUrl("avatars", post.author.avatarUrl);
@@ -58,13 +60,14 @@ export function VibeCard({
   const [hearts, setHearts] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [bump, setBump] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
+  const [saved, setSaved] = useState(post.saved);
 
   useEffect(() => {
     setLiked(post.liked);
     setLikeCount(post.likeCount);
     setFollowing(post.followingAuthor);
-  }, [post.liked, post.likeCount, post.followingAuthor]);
+    setSaved(post.saved);
+  }, [post.liked, post.likeCount, post.followingAuthor, post.saved]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -129,7 +132,7 @@ export function VibeCard({
     <div
       ref={containerRef}
       id={`reel-${post.id}`}
-      className="relative mx-auto h-[100dvh] w-full max-w-[calc(100dvh*9/16)] snap-start snap-always overflow-hidden bg-background"
+      className={cn("relative mx-auto w-full snap-start snap-always overflow-hidden bg-background", compactHeight ? "h-[calc(100dvh-8.5rem)] max-w-[calc((100dvh-8.5rem)*9/16)]" : "h-[100dvh] max-w-[calc(100dvh*9/16)]")}
     >
       <div className="absolute inset-0" onClick={handleTap}>
         {mediaUrl ? (
@@ -192,12 +195,30 @@ export function VibeCard({
           variant="ghost"
           type="button"
           aria-label="Share"
-          onClick={() => setShareOpen(true)}
+          onClick={() => void shareNatively(post.id, post.caption)}
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Send className="size-8" />
           <span className="text-xs font-semibold">Share</span>
         </Button>
+        <Button
+          variant="ghost"
+          type="button"
+          aria-label={saved ? "Remove from saved" : "Save"}
+          onClick={() => {
+            if (!userId) { void actions.onSave(post.id); return; }
+            const wasSaved = saved;
+            setSaved(!wasSaved);
+            void actions.onSave(post.id).then((success) => { if (!success) setSaved(wasSaved); });
+          }}
+          className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
+        >
+          <Bookmark className={cn("size-8", saved && "fill-foreground")} />
+          <span className="text-xs font-semibold">Save</span>
+        </Button>
+        <div className="rounded-md bg-background/45 p-1 backdrop-blur-sm">
+          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />
+        </div>
         <Button variant="ghost" size="icon" type="button" aria-label="More options" title="More options" onClick={() => setMenuOpen(true)} className="size-12 hover:bg-transparent [&_svg]:size-8">
           <MoreHorizontal className="size-8" />
         </Button>
@@ -256,7 +277,6 @@ export function VibeCard({
           <span className="truncate">Original sound · @{post.author.username}</span>
         </div>
         <div className="flex items-center gap-2">
-          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />
           {post.ratingCount > 0 ? (
             <span className="text-xs text-muted-foreground">
               {post.avgRating.toFixed(1)} · {post.ratingCount}
@@ -266,7 +286,6 @@ export function VibeCard({
       </div>
 
       <ReelActionSheet open={menuOpen} onOpenChange={setMenuOpen} post={post} />
-      <ReelShareSheet open={shareOpen} onOpenChange={setShareOpen} post={post} />
     </div>
   );
 }

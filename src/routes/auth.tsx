@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { BrandLogo } from "@/components/famous/BrandLogo";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -88,7 +89,7 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="font-script text-brand text-6xl leading-tight">FamousVibe</h1>
+          <h1 className="flex justify-center"><BrandLogo className="[&_img]:size-20 [&_span]:text-6xl" /></h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Share your vibe. Rate the world. Get famous.
           </p>
