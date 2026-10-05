@@ -9,6 +9,8 @@ import { z } from "zod";
 import { BottomNav } from "@/components/famous/BottomNav";
 import { CommentsSheet } from "@/components/famous/CommentsSheet";
 import { VibeCard } from "@/components/famous/VibeCard";
+import { BrandLogo } from "@/components/famous/BrandLogo";
+import { StoriesTray } from "@/components/famous/StoriesTray";
 import { getFeed } from "@/lib/famous.functions";
 
 export const Route = createFileRoute("/")({
@@ -51,9 +53,7 @@ function FeedPage() {
       <h1 className="sr-only">FamousVibe reels</h1>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-30">
         <div className="mx-auto flex h-14 w-full max-w-lg items-center justify-between px-4">
-          <span className="font-script text-brand text-3xl leading-none drop-shadow-[0_0_12px_var(--color-primary)]">
-            FamousVibe
-          </span>
+          <BrandLogo className="drop-shadow-[0_0_12px_var(--color-primary)]" />
           <div className="pointer-events-auto flex items-center gap-1">
             <Link to="/vibes" aria-label="Search" className="rounded-full p-2">
               <Search className="size-6" />
@@ -70,7 +70,9 @@ function FeedPage() {
         </div>
       </header>
 
-      <div className="no-scrollbar h-[100dvh] snap-y snap-mandatory overflow-y-scroll">
+      <StoriesTray />
+
+      <div className="no-scrollbar h-[100dvh] snap-y snap-mandatory overflow-y-scroll pt-[8.5rem]">
         {isLoading ? (
           <div className="grid h-[100dvh] place-items-center text-sm text-muted-foreground">Loading vibes…</div>
         ) : error ? (
@@ -85,7 +87,7 @@ function FeedPage() {
             </div>
           </div>
         ) : (
-          posts.map((post) => <VibeCard key={post.id} post={post} onOpenComments={setCommentsFor} />)
+          posts.map((post) => <VibeCard key={post.id} post={post} onOpenComments={setCommentsFor} compactHeight />)
         )}
       </div>
 

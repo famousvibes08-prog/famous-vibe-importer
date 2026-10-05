@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep reel sharing in a reusable bottom sheet and use the device's native share UI when available, because links must work on both mobile and desktop.
+- Store ephemeral social content with an explicit expiry timestamp and filter it in both access rules and reads, because Stories must disappear after 24 hours.

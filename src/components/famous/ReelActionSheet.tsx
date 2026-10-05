@@ -1,5 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
-import { Bookmark, Download, EyeOff, Flag, Link2, UserRound } from "lucide-react";
+import { Download, EyeOff, Flag, Link2 } from "lucide-react";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ export function ReelActionSheet({
   post: FeedPost;
 }) {
   const actions = usePostActions();
-  const navigate = useNavigate();
   const run = (fn: () => unknown) => () => {
     onOpenChange(false);
     void fn();
@@ -29,14 +27,8 @@ export function ReelActionSheet({
       label: "Copy link",
       onClick: () => sharePost(post.id),
     },
-    { icon: Bookmark, label: post.saved ? "Remove from saved" : "Save", onClick: () => actions.onSave(post.id) },
     { icon: EyeOff, label: "Not interested", onClick: () => actions.onInterest(post.id, "not_interested") },
-    {
-      icon: UserRound,
-      label: "About this creator",
-      onClick: () => navigate({ to: "/profile/$userId", params: { userId: post.author.id } }),
-    },
-    { icon: Download, label: "Download", onClick: () => actions.onDownload(post) },
+    { icon: Download, label: "Download video", onClick: () => actions.onDownload(post) },
     { icon: Flag, label: "Report", danger: true, onClick: () => actions.onReport(post.id) },
   ];
 

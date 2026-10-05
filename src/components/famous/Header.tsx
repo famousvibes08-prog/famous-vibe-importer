@@ -3,6 +3,7 @@ import { LogIn, LogOut } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessionUser } from "@/hooks/use-session";
+import { BrandLogo } from "./BrandLogo";
 
 export function Header() {
   const queryClient = useQueryClient();
@@ -19,9 +20,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 w-full max-w-lg items-center justify-between px-4">
-        <Link to="/" className="font-script text-brand text-3xl leading-none">
-          FamousVibe
-        </Link>
+        <Link to="/" aria-label="FamousVibe home"><BrandLogo /></Link>
         {signedIn ? (
           <button
             type="button"
