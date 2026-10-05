@@ -29,6 +29,40 @@ export type FeedPost = {
   followingAuthor: boolean;
 };
 
+export type Story = {
+  id: string;
+  mediaUrl: string;
+  mediaType: "image" | "video";
+  caption: string | null;
+  createdAt: string;
+  expiresAt: string;
+  author: Author;
+};
+
+export async function loadActiveStories(supabase: Client): Promise<Story[]> {
+  const { data, error } = await supabase.from("stories").select("id,user_id,media_url,media_type,caption,created_at,expires_at").gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  const authorIds = Array.from(new Set(rows.map((row) => row.user_id)));
+  const { data: profiles } = authorIds.length ? await supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", authorIds) : { data: [] };
+  const authorMap = new Map((profiles ?? []).map((profile) => [profile.id, toAuthor(profile)] as const));
+  return rows.map((row) => ({
+    id: row.id,
+    mediaUrl: row.media_url,
+    mediaType: row.media_type as "image" | "video",
+    caption: row.caption,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    author: authorMap.get(row.user_id) ?? { id: row.user_id, username: "unknown", displayName: null, avatarUrl: null },
+  }));
+}
+
+export async function insertStory(supabase: Client, userId: string, input: { mediaPath: string; mediaType: "image" | "video"; caption: string }) {
+  const { data, error } = await supabase.from("stories").insert({ user_id: userId, media_url: input.mediaPath, media_type: input.mediaType, caption: input.caption || null }).select("id").single();
+  if (error) throw new Error(error.message);
+  return { id: data.id };
+}
+
 const POST_COLUMNS =
   "id,user_id,media_url,media_type,caption,is_vibe,like_count,comment_count,avg_rating,rating_count,created_at";
 
