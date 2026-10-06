@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,12 +14,12 @@ import { uploadToBucket, useSignedUrl } from "@/lib/media";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryViewer } from "./StoryViewer";
 
-function StoryBubble({ story, onClick }: { story: Story; onClick: () => void }) {
+function StoryBubble({ story, seen, onClick }: { story: Story; seen: boolean; onClick: () => void }) {
   const avatarUrl = useSignedUrl("avatars", story.author.avatarUrl);
   return (
     <li className="w-[4.5rem] shrink-0 text-center">
       <Button variant="ghost" type="button" onClick={onClick} className="h-auto w-full flex-col gap-1 p-0 hover:bg-transparent">
-        <span className="ring-brand rounded-full">
+        <span className={seen ? "rounded-full bg-border p-0.5" : "ring-brand rounded-full"}>
           <Avatar className="size-14 border-2 border-background">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={story.author.username} /> : null}
             <AvatarFallback className="bg-surface-2 text-xs">{story.author.username.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -40,7 +40,22 @@ export function StoriesTray() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const { data = [] } = useQuery({ queryKey: ["stories"], queryFn: () => listStories() });
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("famousvibe-seen-stories");
+    if (stored) setSeenIds(new Set(JSON.parse(stored) as string[]));
+  }, []);
+
+  function openStory(index: number) {
+    const story = data[index];
+    if (!story) return;
+    const nextSeen = new Set(seenIds).add(story.id);
+    setSeenIds(nextSeen);
+    window.localStorage.setItem("famousvibe-seen-stories", JSON.stringify([...nextSeen]));
+    setViewerIndex(index);
+  }
 
   async function uploadStory(file: File) {
     if (!userId) {
@@ -76,7 +91,7 @@ export function StoriesTray() {
               <span className="text-[11px]">{uploading ? "Uploading…" : "Your story"}</span>
             </Button>
           </li>
-          {data.map((story, index) => <StoryBubble key={story.id} story={story} onClick={() => setViewerIndex(index)} />)}
+          {data.map((story, index) => <StoryBubble key={story.id} story={story} seen={seenIds.has(story.id)} onClick={() => openStory(index)} />)}
         </ul>
       </section>
       {viewerIndex !== null ? <StoryViewer stories={data} initialIndex={viewerIndex} onClose={() => setViewerIndex(null)} /> : null}
