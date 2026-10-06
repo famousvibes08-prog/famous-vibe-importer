@@ -1,4 +1,4 @@
-import { Download, EyeOff, Flag, Link2 } from "lucide-react";
+import { Download, EyeOff, Flag, Link2, ThumbsUp } from "lucide-react";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export function ReelActionSheet({
   };
 
   const items = [
+    { icon: ThumbsUp, label: "Interested", onClick: () => actions.onInterest(post.id, "interested") },
     { icon: EyeOff, label: "Not interested", onClick: () => actions.onInterest(post.id, "not_interested") },
     { icon: Flag, label: "Report", danger: true, onClick: () => actions.onReport(post.id) },
     {

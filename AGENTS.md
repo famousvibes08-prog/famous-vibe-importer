@@ -9,5 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep reel sharing in a reusable bottom sheet and use the device's native share UI when available, because links must work on both mobile and desktop.
+- Centralize reel URL generation and use native device sharing with clipboard fallback, because simulated app pickers cannot enumerate installed apps.
+- Use a full-ID public reel route alongside legacy short links, because shared URLs must identify the exact reel without prefix collisions.
+- Keep browser video exports at source dimensions with explicit re-encoding disclosure and original-file fallback, because appending an end card requires encoding and browser support varies.
 - Store ephemeral social content with an explicit expiry timestamp and filter it in both access rules and reads, because Stories must disappear after 24 hours.
