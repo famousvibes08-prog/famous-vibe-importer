@@ -23,7 +23,7 @@ export function PostCard({
   const navigate = useNavigate();
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-border bg-card shadow-neon-soft">
+    <article className="overflow-hidden rounded-md border border-border bg-card shadow-neon-soft">
       <div className="flex items-center gap-3 px-4 py-3">
         <Link to="/profile/$userId" params={{ userId: post.author.id }} className="ring-brand rounded-full">
           <Avatar className="size-9 border-2 border-card">
@@ -52,7 +52,7 @@ export function PostCard({
       </div>
 
       <div
-        className="relative aspect-square w-full bg-surface-2"
+        className="relative aspect-[4/5] w-full bg-surface-2"
         role={post.mediaType === "video" ? "button" : undefined}
         tabIndex={post.mediaType === "video" ? 0 : undefined}
         aria-label={post.mediaType === "video" ? "Open in Vibe player" : undefined}
