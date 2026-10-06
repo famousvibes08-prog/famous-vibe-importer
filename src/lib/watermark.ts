@@ -108,7 +108,8 @@ export async function downloadWatermarkedVideo(src: string, username: string) {
   if (!ctx) throw new Error("Canvas unavailable");
 
   const videoStream = canvas.captureStream(30);
-  const sourceStream = typeof video.captureStream === "function" ? video.captureStream() : null;
+  const captureSource = video as HTMLVideoElement & { captureStream?: () => MediaStream };
+  const sourceStream = captureSource.captureStream?.() ?? null;
   const stream = new MediaStream([
     ...videoStream.getVideoTracks(),
     ...(sourceStream?.getAudioTracks() ?? []),

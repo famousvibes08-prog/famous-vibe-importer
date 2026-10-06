@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +6,7 @@ import { PostMenu } from "./PostMenu";
 import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSignedUrl } from "@/lib/media";
-import { sharePost } from "@/lib/share";
+import { shareNatively } from "@/lib/share";
 import { cn } from "@/lib/utils";
 import type { FeedPost } from "@/lib/famous.server";
 
@@ -20,9 +20,10 @@ export function PostCard({
   const mediaUrl = useSignedUrl("media", post.mediaUrl);
   const avatarUrl = useSignedUrl("avatars", post.author.avatarUrl);
   const actions = usePostActions();
+  const navigate = useNavigate();
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-border bg-card shadow-neon-soft">
+    <article className="overflow-hidden rounded-md border border-border bg-card shadow-neon-soft">
       <div className="flex items-center gap-3 px-4 py-3">
         <Link to="/profile/$userId" params={{ userId: post.author.id }} className="ring-brand rounded-full">
           <Avatar className="size-9 border-2 border-card">
@@ -50,12 +51,19 @@ export function PostCard({
         />
       </div>
 
-      <div className="relative aspect-square w-full bg-surface-2">
+      <div
+        className="relative aspect-[4/5] w-full bg-surface-2"
+        role={post.mediaType === "video" ? "button" : undefined}
+        tabIndex={post.mediaType === "video" ? 0 : undefined}
+        aria-label={post.mediaType === "video" ? "Open in Vibe player" : undefined}
+        onClick={() => post.mediaType === "video" && navigate({ to: "/vibes", search: { post: post.id } })}
+        onKeyDown={(event) => { if (post.mediaType === "video" && (event.key === "Enter" || event.key === " ")) navigate({ to: "/vibes", search: { post: post.id } }); }}
+      >
         {mediaUrl ? (
           post.mediaType === "video" ? (
             <video
               src={mediaUrl}
-              controls
+              muted
               playsInline
               className="size-full object-cover"
               preload="metadata"
@@ -96,7 +104,7 @@ export function PostCard({
         <button
           type="button"
           aria-label="Share"
-          onClick={() => sharePost(post.id, post.caption)}
+           onClick={() => void shareNatively(post.id, post.caption)}
           className="rounded-full p-2"
         >
           <Send className="size-6" />

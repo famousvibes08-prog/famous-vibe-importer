@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Bell, Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { BottomNav } from "@/components/famous/BottomNav";
 import { CommentsSheet } from "@/components/famous/CommentsSheet";
-import { VibeCard } from "@/components/famous/VibeCard";
+import { PostCard } from "@/components/famous/PostCard";
 import { BrandLogo } from "@/components/famous/BrandLogo";
 import { StoriesTray } from "@/components/famous/StoriesTray";
 import { getFeed } from "@/lib/famous.functions";
@@ -33,20 +33,11 @@ export const Route = createFileRoute("/")({
 
 function FeedPage() {
   const fetchFeed = useServerFn(getFeed);
-  const { post: targetId } = Route.useSearch();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
 
-  const posts = useMemo(() => {
-    if (!data || !targetId) return data ?? [];
-    const target = data.find((p) => p.id === targetId);
-    return target ? [target, ...data.filter((p) => p.id !== targetId)] : data;
-  }, [data, targetId]);
-
-  useEffect(() => {
-    if (targetId) document.getElementById(`reel-${targetId}`)?.scrollIntoView();
-  }, [targetId, posts.length]);
+  const posts = data ?? [];
 
   return (
     <div className="bg-background">
@@ -72,24 +63,24 @@ function FeedPage() {
 
       <StoriesTray />
 
-      <div className="no-scrollbar h-[100dvh] snap-y snap-mandatory overflow-y-scroll pt-[8.5rem]">
+      <main className="mx-auto min-h-[100dvh] w-full max-w-lg space-y-4 px-3 pt-[9rem] pb-24">
         {isLoading ? (
-          <div className="grid h-[100dvh] place-items-center text-sm text-muted-foreground">Loading vibes…</div>
+          <div className="grid min-h-[60dvh] place-items-center text-sm text-muted-foreground">Loading feed…</div>
         ) : error ? (
-          <div className="grid h-[100dvh] place-items-center text-sm text-destructive">
+          <div className="grid min-h-[60dvh] place-items-center text-sm text-destructive">
             {(error as Error).message || "Could not load the feed"}
           </div>
         ) : posts.length === 0 ? (
-          <div className="grid h-[100dvh] place-items-center px-8 text-center">
+          <div className="grid min-h-[60dvh] place-items-center px-8 text-center">
             <div>
               <p className="font-script text-brand text-4xl">Nothing here yet</p>
               <p className="mt-2 text-sm text-muted-foreground">Tap + to post the first vibe.</p>
             </div>
           </div>
         ) : (
-          posts.map((post) => <VibeCard key={post.id} post={post} onOpenComments={setCommentsFor} compactHeight />)
+          posts.map((post) => <PostCard key={post.id} post={post} onOpenComments={setCommentsFor} />)
         )}
-      </div>
+      </main>
 
       <CommentsSheet
         postId={commentsFor}

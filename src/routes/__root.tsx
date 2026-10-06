@@ -142,6 +142,21 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("famousvibe-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, () => queryClient.invalidateQueries({ queryKey: ["feed"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["feed"] });
+        queryClient.invalidateQueries({ queryKey: ["comments"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "ratings" }, () => queryClient.invalidateQueries({ queryKey: ["feed"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, () => queryClient.invalidateQueries({ queryKey: ["profile"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "stories" }, () => queryClient.invalidateQueries({ queryKey: ["stories"] }))
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

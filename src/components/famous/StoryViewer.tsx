@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import type { Story } from "@/lib/famous.server";
 import { useSignedUrl } from "@/lib/media";
 
-function StoryMedia({ story, onDone }: { story: Story; onDone: () => void }) {
+function StoryMedia({ story, onDone, onProgress }: { story: Story; onDone: () => void; onProgress: (value: number) => void }) {
   const mediaUrl = useSignedUrl("media", story.mediaUrl);
   if (!mediaUrl) return <div className="grid size-full place-items-center text-sm text-muted-foreground">Loading story…</div>;
   return story.mediaType === "video" ? (
-    <video src={mediaUrl} autoPlay playsInline onEnded={onDone} className="size-full object-cover" />
+    <video src={mediaUrl} autoPlay playsInline onEnded={onDone} onTimeUpdate={(event) => { const video = event.currentTarget; if (Number.isFinite(video.duration) && video.duration > 0) onProgress(video.currentTime / video.duration); }} className="size-full object-cover" />
   ) : <img src={mediaUrl} alt={story.caption ?? `Story by ${story.author.username}`} className="size-full object-cover" />;
 }
 
@@ -44,7 +44,7 @@ export function StoryViewer({ stories, initialIndex, onClose }: { stories: Story
   return (
     <div role="dialog" aria-modal="true" aria-label={`${story.author.username}'s story`} className="fixed inset-0 z-[80] bg-background">
       <div className="relative mx-auto h-[100dvh] w-full max-w-[calc(100dvh*9/16)] overflow-hidden bg-surface">
-        <StoryMedia key={story.id} story={story} onDone={next} />
+        <StoryMedia key={story.id} story={story} onDone={next} onProgress={setProgress} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-background/40" />
         <div className="absolute inset-x-0 top-0 z-10 p-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
           <div className="mb-3 flex gap-1">{stories.map((item, itemIndex) => <span key={item.id} className="h-0.5 flex-1 overflow-hidden rounded-full bg-foreground/30"><span className="block h-full bg-foreground transition-[width] duration-100" style={{ width: itemIndex < index ? "100%" : itemIndex > index ? "0%" : `${progress * 100}%` }} /></span>)}</div>

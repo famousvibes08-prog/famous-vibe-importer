@@ -22,14 +22,14 @@ export function ReelActionSheet({
   };
 
   const items = [
+    { icon: EyeOff, label: "Not interested", onClick: () => actions.onInterest(post.id, "not_interested") },
+    { icon: Flag, label: "Report", danger: true, onClick: () => actions.onReport(post.id) },
     {
       icon: Link2,
       label: "Copy link",
       onClick: () => sharePost(post.id),
     },
-    { icon: EyeOff, label: "Not interested", onClick: () => actions.onInterest(post.id, "not_interested") },
     { icon: Download, label: "Download video", onClick: () => actions.onDownload(post) },
-    { icon: Flag, label: "Report", danger: true, onClick: () => actions.onReport(post.id) },
   ];
 
   return (

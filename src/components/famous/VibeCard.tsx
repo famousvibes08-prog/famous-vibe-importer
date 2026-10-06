@@ -5,6 +5,7 @@ import { Bookmark, Heart, MessageCircle, MoreHorizontal, Music2, Send } from "lu
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ReelActionSheet } from "./ReelActionSheet";
+import { ReelShareSheet } from "./ReelShareSheet";
 import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSessionUser } from "@/hooks/use-session";
@@ -61,6 +62,7 @@ export function VibeCard({
   const [bump, setBump] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [saved, setSaved] = useState(post.saved);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     setLiked(post.liked);
@@ -195,7 +197,10 @@ export function VibeCard({
           variant="ghost"
           type="button"
           aria-label="Share"
-          onClick={() => void shareNatively(post.id, post.caption)}
+          onClick={() => {
+            if ("share" in navigator) void shareNatively(post.id, post.caption);
+            else setShareOpen(true);
+          }}
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Send className="size-8" />
@@ -286,6 +291,7 @@ export function VibeCard({
       </div>
 
       <ReelActionSheet open={menuOpen} onOpenChange={setMenuOpen} post={post} />
+      <ReelShareSheet open={shareOpen} onOpenChange={setShareOpen} post={post} />
     </div>
   );
 }

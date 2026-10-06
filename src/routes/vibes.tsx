@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { useEffect, useMemo } from "react";
+import { z } from "zod";
 
 import { BottomNav } from "@/components/famous/BottomNav";
 import { CommentsSheet } from "@/components/famous/CommentsSheet";
@@ -9,6 +11,7 @@ import { VibeCard } from "@/components/famous/VibeCard";
 import { getVibes } from "@/lib/famous.functions";
 
 export const Route = createFileRoute("/vibes")({
+  validateSearch: z.object({ post: z.string().optional() }),
   head: () => ({
     meta: [
       { title: "Vibes — Short videos on FamousVibe" },
@@ -27,12 +30,19 @@ export const Route = createFileRoute("/vibes")({
 
 function VibesPage() {
   const fetchVibes = useServerFn(getVibes);
+  const { post: targetId } = Route.useSearch();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["vibes"],
     queryFn: () => fetchVibes(),
   });
+  const posts = useMemo(() => {
+    if (!data || !targetId) return data ?? [];
+    const target = data.find((item) => item.id === targetId);
+    return target ? [target, ...data.filter((item) => item.id !== targetId)] : data;
+  }, [data, targetId]);
+  useEffect(() => { if (targetId) document.getElementById(`reel-${targetId}`)?.scrollIntoView(); }, [targetId, posts.length]);
 
   return (
     <div className="bg-background">
@@ -42,7 +52,7 @@ function VibesPage() {
           <div className="grid h-[100dvh] place-items-center text-sm text-muted-foreground">
             Loading vibes…
           </div>
-        ) : (data?.length ?? 0) === 0 ? (
+        ) : posts.length === 0 ? (
           <div className="grid h-[100dvh] place-items-center px-8 text-center">
             <div>
               <p className="font-script text-brand text-4xl">No vibes yet</p>
@@ -52,7 +62,7 @@ function VibesPage() {
             </div>
           </div>
         ) : (
-          data!.map((post) => (
+          posts.map((post) => (
             <VibeCard key={post.id} post={post} onOpenComments={setCommentsFor} />
           ))
         )}
