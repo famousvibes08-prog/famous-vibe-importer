@@ -68,7 +68,7 @@
 :root {
   --radius: 1rem;
 
-  --background: oklch(0.13 0.028 285);
+  --background: #08070F;
   --foreground: oklch(0.97 0.005 285);
 
   --surface: oklch(0.18 0.035 285);
@@ -82,7 +82,7 @@
   --neon-pink: oklch(0.68 0.28 349);
   --neon-purple: oklch(0.63 0.24 303);
   --neon-blue: oklch(0.62 0.21 258);
-  --like: oklch(0.65 0.24 18);
+  --like: var(--neon-pink);
   --star: oklch(0.83 0.17 88);
 
   --primary: oklch(0.63 0.24 303);
@@ -186,3 +186,11 @@
 .like-bump { animation: like-bump 0.35s ease-out; }
 @keyframes count-tick { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 .count-tick { animation: count-tick 0.25s ease-out; display: inline-block; }
+
+@keyframes reel-disc-spin { to { transform: rotate(360deg); } }
+@keyframes reel-track-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.reel-disc { animation: reel-disc-spin 7s linear infinite; }
+.reel-track { display: flex; width: max-content; animation: reel-track-scroll 14s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .reel-disc, .reel-track, .heart-pop, .like-bump, .count-tick { animation: none; }
+}

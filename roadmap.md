@@ -6,3 +6,6 @@
 
 - [x] Rebuild Home as Instagram-style in-feed cards; tapping video opens that exact Reel.
 - [x] Expand bottom navigation to Home, Explore, Vibe, Upload, and Profile.
+- [ ] Match requested Reels overlay positions, native-only sharing and full-ID links.
+- [ ] Refine unmuted playback and animated creator/logo download end card.
+- [ ] Verify Reels interactions and document browser/domain limitations.

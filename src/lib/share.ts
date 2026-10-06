@@ -1,17 +1,21 @@
 import { toast } from "sonner";
 
+export function getPostShareUrl(postId: string) {
+  return `https://www.famousvibe.com/vibe/${postId}`;
+}
+
 export async function sharePost(postId: string, caption?: string | null) {
-  const url = `${window.location.origin}/v/${postId.slice(0, 8)}`;
+  const url = getPostShareUrl(postId);
   try {
     await navigator.clipboard.writeText(url);
-    toast.success("Short link copied", { description: url });
+    toast.success("Link copied", { description: url });
   } catch {
     toast.error("Could not copy the link");
   }
 }
 
 export async function shareNatively(postId: string, caption?: string | null) {
-  const url = `${window.location.origin}/v/${postId.slice(0, 8)}`;
+  const url = getPostShareUrl(postId);
   if (!navigator.share) {
     await sharePost(postId, caption);
     return;
