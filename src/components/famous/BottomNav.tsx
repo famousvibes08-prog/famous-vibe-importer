@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Clapperboard, Home, PlusSquare, User } from "lucide-react";
+import { Clapperboard, Home, PlusSquare, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/vibes", label: "Reels", icon: Clapperboard },
-  { to: "/create", label: "Create", icon: PlusSquare },
+  { to: "/explore", label: "Explore", icon: Search },
+  { to: "/vibes", label: "Vibe", icon: Clapperboard, primary: true },
+  { to: "/create", label: "Upload", icon: PlusSquare },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -28,7 +29,7 @@ export function BottomNav() {
                 <span
                   className={cn(
                     "grid size-9 place-items-center rounded-xl transition-all",
-                    active ? "bg-brand shadow-neon" : "bg-transparent",
+                    item.primary ? "bg-brand shadow-neon" : active ? "bg-surface-2" : "bg-transparent",
                   )}
                 >
                   <Icon
