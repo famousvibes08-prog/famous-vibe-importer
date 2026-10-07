@@ -1,7 +1,7 @@
 import { Copy, ExternalLink, Send, Share2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { shareNatively, sharePost } from "@/lib/share";
+import { getPostShareUrl, shareNatively, sharePost } from "@/lib/share";
 import type { FeedPost } from "@/lib/famous.server";
 
 export function ReelShareSheet({ post, open, onOpenChange }: {
@@ -9,7 +9,7 @@ export function ReelShareSheet({ post, open, onOpenChange }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const url = typeof window === "undefined" ? "" : `${window.location.origin}/v/${post.id.slice(0, 8)}`;
+  const url = getPostShareUrl(post.id);
   const text = encodeURIComponent(`${post.caption?.slice(0, 120) || "Watch this reel"} ${url}`);
   const links = [
     { label: "WhatsApp", href: `https://api.whatsapp.com/send?text=${text}` },

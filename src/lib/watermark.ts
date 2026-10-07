@@ -79,93 +79,112 @@ export async function downloadWatermarkedImage(src: string, username: string) {
 }
 
 export async function downloadWatermarkedVideo(src: string, username: string) {
-  const supportsRecorder =
-    typeof MediaRecorder !== "undefined" &&
-    typeof HTMLCanvasElement.prototype.captureStream === "function";
-
-  if (!supportsRecorder) {
-    toast.message("Watermarked video isn't supported on this browser", {
-      description: "Downloading the original video and a watermarked cover instead.",
-    });
-    triggerDownload(await (await fetch(src)).blob(), `famousvibe-${Date.now()}.mp4`);
+  const original = async () => {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error("Could not download original video");
+    const blob = await response.blob();
+    const extension = blob.type.includes("webm") ? "webm" : blob.type.includes("quicktime") ? "mov" : "mp4";
+    triggerDownload(blob, `famousvibe-${Date.now()}.${extension}`);
+    toast.message("Original video downloaded", { description: "No end card added; original quality and audio preserved." });
+  };
+  if (typeof MediaRecorder === "undefined" || typeof HTMLCanvasElement.prototype.captureStream !== "function") {
+    await original();
     return;
   }
-
+  toast.message("Preparing creator end card", { description: "Keeps original dimensions; adding an end card re-encodes video and audio." });
   const video = document.createElement("video");
   video.crossOrigin = "anonymous";
-  video.src = src;
   video.muted = false;
   video.playsInline = true;
-  await new Promise<void>((resolve, reject) => {
-    video.onloadedmetadata = () => resolve();
-    video.onerror = () => reject(new Error("Could not load video"));
-  });
-
-  const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas unavailable");
-
-  const videoStream = canvas.captureStream(30);
-  const captureSource = video as HTMLVideoElement & { captureStream?: () => MediaStream };
-  const sourceStream = captureSource.captureStream?.() ?? null;
-  const stream = new MediaStream([
-    ...videoStream.getVideoTracks(),
-    ...(sourceStream?.getAudioTracks() ?? []),
-  ]);
-  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm";
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
-  const chunks: BlobPart[] = [];
-  recorder.ondataavailable = (event) => {
-    if (event.data.size > 0) chunks.push(event.data);
-  };
-
-  const done = new Promise<void>((resolve) => {
-    recorder.onstop = () => resolve();
-  });
-
+  const audio = new AudioContext();
+  const resumed = audio.resume().catch(() => undefined);
   let raf = 0;
-  let endCard = false;
-  const renderFrame = () => {
-    if (endCard) {
-      ctx.fillStyle = "#08070F";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const gradient = ctx.createLinearGradient(canvas.width * 0.2, 0, canvas.width * 0.8, canvas.height);
-      gradient.addColorStop(0, "#FF2E9A");
-      gradient.addColorStop(0.52, "#A855F7");
-      gradient.addColorStop(1, "#3B82F6");
-      ctx.textAlign = "center";
-      ctx.fillStyle = gradient;
-      ctx.font = `700 ${Math.max(42, canvas.width * 0.12)}px Inter, sans-serif`;
-      ctx.fillText("FamousVibe", canvas.width / 2, canvas.height / 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `600 ${Math.max(22, canvas.width * 0.055)}px Inter, sans-serif`;
-      ctx.fillText(`@${username}`, canvas.width / 2, canvas.height / 2 + canvas.height * 0.08);
-      ctx.textAlign = "start";
-    } else {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      drawWatermark(ctx, canvas.width, canvas.height, username);
-    }
-    raf = requestAnimationFrame(renderFrame);
-  };
-
-  recorder.start();
-  await video.play();
-  renderFrame();
-
-  await new Promise<void>((resolve) => {
-    video.onended = () => resolve();
-  });
-
-  endCard = true;
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  cancelAnimationFrame(raf);
-  recorder.stop();
-  await done;
-
-  triggerDownload(new Blob(chunks, { type: "video/webm" }), `famousvibe-${Date.now()}.webm`);
+  let stream: MediaStream | undefined;
+  let recorder: MediaRecorder | undefined;
+  try {
+    const ready = new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error("Could not load video"));
+    });
+    video.src = src;
+    await ready;
+    await resumed;
+    if (audio.state !== "running") throw new Error("Audio export unavailable");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable");
+    const logo = await loadImage("/icon-512.png");
+    const source = audio.createMediaElementSource(video);
+    const destination = audio.createMediaStreamDestination();
+    source.connect(destination);
+    // Connect only to the recording destination, avoiding duplicate playback sound.
+    stream = new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...destination.stream.getAudioTracks()]);
+    const mimeType = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/mp4", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+    if (!mimeType) throw new Error("Video export unavailable");
+    recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: Math.max(12_000_000, canvas.width * canvas.height * 8), audioBitsPerSecond: 256_000 });
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+    const stopped = new Promise<void>((resolve, reject) => {
+      if (!recorder) return reject(new Error("Recorder unavailable"));
+      recorder.onstop = () => resolve();
+      recorder.onerror = () => reject(new Error("Video export failed"));
+    });
+    const styles = getComputedStyle(document.documentElement);
+    const color = (name: string) => styles.getPropertyValue(name).trim();
+    let endStarted = 0;
+    const renderFrame = () => {
+      if (endStarted) {
+        const progress = Math.min(1, (performance.now() - endStarted) / 600);
+        ctx.fillStyle = color("--background");
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.globalAlpha = progress;
+        const size = canvas.width * (0.27 + progress * 0.03);
+        ctx.drawImage(logo, (canvas.width - size) / 2, canvas.height * 0.35 - size / 2, size, size);
+        ctx.textAlign = "center";
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gradient.addColorStop(0, color("--neon-pink"));
+        gradient.addColorStop(0.5, color("--neon-purple"));
+        gradient.addColorStop(1, color("--neon-blue"));
+        ctx.fillStyle = gradient;
+        ctx.font = `700 ${canvas.width * 0.1}px Inter, sans-serif`;
+        ctx.fillText("FamousVibe", canvas.width / 2, canvas.height * 0.53, canvas.width * 0.85);
+        ctx.fillStyle = color("--foreground");
+        ctx.font = `600 ${canvas.width * 0.055}px Inter, sans-serif`;
+        ctx.fillText(`@${username}`, canvas.width / 2, canvas.height * 0.6, canvas.width * 0.85);
+        ctx.restore();
+      } else ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      raf = requestAnimationFrame(renderFrame);
+    };
+    const ended = new Promise<void>((resolve, reject) => {
+      video.onended = () => resolve();
+      video.onerror = () => reject(new Error("Playback export failed"));
+    });
+    await video.play();
+    renderFrame();
+    recorder.start(1000);
+    await ended;
+    endStarted = performance.now();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    cancelAnimationFrame(raf);
+    recorder.stop();
+    await stopped;
+    triggerDownload(new Blob(chunks, { type: mimeType }), `famousvibe-${Date.now()}.${mimeType.includes("mp4") ? "mp4" : "webm"}`);
+    toast.success("Video with creator end card downloaded");
+  } catch {
+    toast.message("End card export unavailable", { description: "Downloading the unchanged original instead." });
+    await original();
+  } finally {
+    cancelAnimationFrame(raf);
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    stream?.getTracks().forEach((track) => track.stop());
+    await audio.close();
+  }
 }
 
 export async function downloadWatermarked(

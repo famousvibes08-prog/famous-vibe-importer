@@ -6,6 +6,8 @@
 
 - [x] Rebuild Home as Instagram-style in-feed cards; tapping video opens that exact Reel.
 - [x] Expand bottom navigation to Home, Explore, Vibe, Upload, and Profile.
-- [ ] Match requested Reels overlay positions, native-only sharing and full-ID links.
-- [ ] Refine unmuted playback and animated creator/logo download end card.
-- [ ] Verify Reels interactions and document browser/domain limitations.
+- [x] Match requested Reels overlay positions, native-only sharing and full-ID links.
+- [x] Refine unmuted playback and animated creator/logo download end card.
+- [x] Verify exact copied link, shared-reel navigation, signed-in like persistence, native share invocation, and source-dimension/audio end-card export.
+- [ ] Connect www.famousvibe.com before external shared links can work (blocked: domain connection/ownership confirmation).
+- [ ] Confirm actual installed-app share sheet and reel sound on a physical phone (blocked: real-device browser testing).
