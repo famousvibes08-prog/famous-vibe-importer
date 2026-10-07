@@ -25,7 +25,7 @@ function ShortLink() {
 
   useEffect(() => {
     resolve({ data: { code: code.toLowerCase() } })
-      .then((r) => navigate({ to: "/", search: r.postId ? { post: r.postId } : {}, replace: true }))
+      .then((r) => navigate({ to: "/vibes", search: r.postId ? { post: r.postId } : {}, replace: true }))
       .catch(() => navigate({ to: "/", replace: true }));
   }, [code, resolve, navigate]);
 

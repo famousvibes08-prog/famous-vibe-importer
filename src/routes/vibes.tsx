@@ -53,7 +53,8 @@ function VibesPage() {
         const bounds = event.currentTarget.getBoundingClientRect();
         event.currentTarget.querySelectorAll<HTMLVideoElement>("video[data-reel]").forEach((video) => {
           const rect = video.getBoundingClientRect();
-          if (rect.top < bounds.top - 1 || rect.bottom > bounds.bottom + 1) video.pause();
+          const visible = Math.max(0, Math.min(rect.bottom, bounds.bottom) - Math.max(rect.top, bounds.top));
+          if (visible / rect.height < 0.51) video.pause();
         });
       }}>
         {isLoading ? (

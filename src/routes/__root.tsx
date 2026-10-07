@@ -143,15 +143,23 @@ function RootComponent() {
   }, [router, queryClient]);
 
   useEffect(() => {
+    const refreshReels = () => {
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["vibes"] });
+    };
     const channel = supabase
       .channel("famousvibe-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, () => queryClient.invalidateQueries({ queryKey: ["feed"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, refreshReels)
+      .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, refreshReels)
       .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["feed"] });
+        refreshReels();
         queryClient.invalidateQueries({ queryKey: ["comments"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "ratings" }, () => queryClient.invalidateQueries({ queryKey: ["feed"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, () => queryClient.invalidateQueries({ queryKey: ["profile"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "ratings" }, refreshReels)
+      .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, () => {
+        refreshReels();
+        void queryClient.invalidateQueries({ queryKey: ["profile"] });
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "stories" }, () => queryClient.invalidateQueries({ queryKey: ["stories"] }))
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
