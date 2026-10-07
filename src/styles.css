@@ -191,6 +191,7 @@
 @keyframes reel-track-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .reel-disc { animation: reel-disc-spin 7s linear infinite; }
 .reel-track { display: flex; width: max-content; animation: reel-track-scroll 14s linear infinite; }
+.reel-actions > button > svg { stroke-width: 1.8; }
 @media (prefers-reduced-motion: reduce) {
   .reel-disc, .reel-track, .heart-pop, .like-bump, .count-tick { animation: none; }
 }

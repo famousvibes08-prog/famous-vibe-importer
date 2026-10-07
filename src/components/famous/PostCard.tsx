@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
+import { Bookmark, Heart, MessageCircle } from "lucide-react";
+import { ReelShareIcon } from "./ReelIcons";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostMenu } from "./PostMenu";
@@ -107,7 +108,7 @@ export function PostCard({
            onClick={() => void shareNatively(post.id, post.caption)}
           className="rounded-full p-2"
         >
-          <Send className="size-6" />
+          <ReelShareIcon className="size-6" />
         </button>
         <div className="ml-auto flex items-center gap-2">
           <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />

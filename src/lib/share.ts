@@ -16,14 +16,14 @@ export async function sharePost(postId: string, caption?: string | null) {
 
 export async function shareNatively(postId: string, caption?: string | null) {
   const url = getPostShareUrl(postId);
-  if (!navigator.share) {
+  if (typeof navigator.share !== "function") {
     await sharePost(postId, caption);
     return;
   }
   try {
     await navigator.share({ title: "FamousVibe", text: caption?.slice(0, 120) || "Watch this reel", url });
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") return;
-    toast.error("Could not open sharing");
+    if (error && typeof error === "object" && "name" in error && error.name === "AbortError") return;
+    await sharePost(postId, caption);
   }
 }
