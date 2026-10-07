@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bookmark, Camera, Disc3, Heart, MessageCircle, MoreHorizontal, Play, Plus, Send } from "lucide-react";
+import { Bookmark, Camera, Disc3, Heart, MessageCircle, MoreHorizontal, Play, Plus } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { useSignedUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { FeedPost } from "@/lib/famous.server";
 import { shareNatively } from "@/lib/share";
+import { ReelShareIcon } from "./ReelIcons";
 
 async function playWithSound(video: HTMLVideoElement): Promise<boolean> {
   document.querySelectorAll<HTMLVideoElement>("video[data-reel]").forEach((other) => {
@@ -112,6 +113,7 @@ export function VibeCard({
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
       const rect = e.currentTarget.getBoundingClientRect();
       const id = now;
       setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
@@ -175,7 +177,7 @@ export function VibeCard({
         if (video) void playWithSound(video).then((playing) => setNeedsPlay(!playing));
       }}><Play /></Button> : null}
 
-      <div className="absolute right-1 bottom-5 z-10 flex w-14 flex-col items-center gap-3">
+      <div className="reel-actions absolute right-2 bottom-5 z-10 flex w-12 flex-col items-center gap-2">
         <Button
           variant="ghost"
           type="button"
@@ -214,7 +216,7 @@ export function VibeCard({
           }}
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
-          <Send className="size-8" />
+          <ReelShareIcon className="size-8" />
         </Button>
         <Button
           variant="ghost"
@@ -230,8 +232,8 @@ export function VibeCard({
         >
           <Bookmark className={cn("size-8", saved && "fill-foreground")} />
         </Button>
-        <div className="rounded-md bg-background/45 p-1 backdrop-blur-sm [&>div]:flex-col">
-          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />
+        <div className="flex w-12 justify-center">
+          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="reel" />
         </div>
         <Button variant="ghost" size="icon" type="button" aria-label="More options" title="More options" onClick={() => setMenuOpen(true)} className="size-12 hover:bg-transparent [&_svg]:size-8">
           <MoreHorizontal className="size-8" />

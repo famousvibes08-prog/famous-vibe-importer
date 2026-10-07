@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Centralize reel URL generation and use native device sharing with clipboard fallback, because simulated app pickers cannot enumerate installed apps.
+- Keep shared Reels icon geometry in a reusable browser-safe icon module, because feed and player share buttons should stay visually consistent.
 - Use a full-ID public reel route alongside legacy short links, because shared URLs must identify the exact reel without prefix collisions.
 - Keep browser video exports at source dimensions with explicit re-encoding disclosure and original-file fallback, because appending an end card requires encoding and browser support varies.
 - Store ephemeral social content with an explicit expiry timestamp and filter it in both access rules and reads, because Stories must disappear after 24 hours.

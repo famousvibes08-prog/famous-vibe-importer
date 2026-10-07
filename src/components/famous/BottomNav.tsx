@@ -1,13 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Clapperboard, Home, PlusSquare, Search, User } from "lucide-react";
+import { Home, PlusSquare, Search, CircleUserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ReelTabIcon } from "./ReelIcons";
 
 const items: ReadonlyArray<{ to: "/" | "/explore" | "/vibes" | "/create" | "/profile"; label: string; icon: typeof Home; primary?: boolean }> = [
   { to: "/", label: "Home", icon: Home },
   { to: "/explore", label: "Explore", icon: Search },
-  { to: "/vibes", label: "Vibe", icon: Clapperboard, primary: true },
+  { to: "/vibes", label: "Vibe", icon: ReelTabIcon, primary: true },
   { to: "/create", label: "Upload", icon: PlusSquare },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/profile", label: "Profile", icon: CircleUserRound },
 ];
 
 export function BottomNav() {
@@ -21,22 +23,27 @@ export function BottomNav() {
           const Icon = item.icon;
           return (
             <li key={item.to}>
-              <Link
+                <Button asChild variant="ghost" className="h-auto rounded-none p-0 hover:bg-transparent">
+                <Link
                 to={item.to}
                 aria-label={item.label}
-                className="flex flex-col items-center gap-1 px-3 py-1"
+                 aria-current={active ? "page" : undefined}
+                 title={item.label}
+                 className="flex w-14 flex-col items-center gap-1 px-1 py-1"
               >
                 <span
                   className={cn(
-                    "grid size-9 place-items-center rounded-xl transition-all",
-                    item.primary ? "bg-brand shadow-neon" : active ? "bg-surface-2" : "bg-transparent",
+                     "grid size-9 place-items-center transition-colors",
+                     active ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   <Icon
                     className={cn(
-                      "size-5",
-                      active ? "text-primary-foreground" : "text-muted-foreground",
+                       "size-7",
+                       item.primary && "text-neon-pink",
+                       active && item.primary && "drop-shadow-[0_0_8px_var(--color-neon-purple)]",
                     )}
+                     strokeWidth={active ? 2.2 : 1.8}
                   />
                 </span>
                 <span
@@ -48,6 +55,7 @@ export function BottomNav() {
                   {item.label}
                 </span>
               </Link>
+               </Button>
             </li>
           );
         })}

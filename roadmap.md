@@ -11,3 +11,4 @@
 - [x] Verify exact copied link, shared-reel navigation, signed-in like persistence, native share invocation, and source-dimension/audio end-card export.
 - [ ] Connect www.famousvibe.com before external shared links can work (blocked: domain connection/ownership confirmation).
 - [ ] Confirm actual installed-app share sheet and reel sound on a physical phone (blocked: real-device browser testing).
+- [ ] Fix failed native sharing with copy-link fallback; refresh curved share icon, navigation, action spacing and menu corners.
