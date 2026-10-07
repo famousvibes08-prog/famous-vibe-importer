@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bookmark, Heart, MessageCircle, MoreHorizontal, Music2, Send } from "lucide-react";
+import { Bookmark, Camera, Disc3, Heart, MessageCircle, MoreHorizontal, Play, Plus, Send } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ReelActionSheet } from "./ReelActionSheet";
-import { ReelShareSheet } from "./ReelShareSheet";
 import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSessionUser } from "@/hooks/use-session";
@@ -14,28 +13,16 @@ import { cn } from "@/lib/utils";
 import type { FeedPost } from "@/lib/famous.server";
 import { shareNatively } from "@/lib/share";
 
-// Browsers block unmuted autoplay until the first user gesture. We start with sound,
-// fall back to silent playback only if blocked, and turn sound on at the first tap.
-let soundUnlocked = false;
-function unlockSoundOnce() {
-  if (soundUnlocked || typeof document === "undefined") return;
-  const unlock = () => {
-    soundUnlocked = true;
-    document.querySelectorAll<HTMLVideoElement>("video[data-reel]").forEach((v) => {
-      v.muted = false;
-    });
-  };
-  document.addEventListener("pointerdown", unlock, { once: true, capture: true });
-}
-
-async function playWithSound(video: HTMLVideoElement) {
+async function playWithSound(video: HTMLVideoElement): Promise<boolean> {
+  document.querySelectorAll<HTMLVideoElement>("video[data-reel]").forEach((other) => {
+    if (other !== video) other.pause();
+  });
   video.muted = false;
   try {
     await video.play();
+    return true;
   } catch {
-    video.muted = true;
-    unlockSoundOnce();
-    await video.play().catch(() => undefined);
+    return false;
   }
 }
 
@@ -62,7 +49,9 @@ export function VibeCard({
   const [bump, setBump] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [saved, setSaved] = useState(post.saved);
-  const [shareOpen, setShareOpen] = useState(false);
+  const [needsPlay, setNeedsPlay] = useState(false);
+  const activeRef = useRef(false);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setLiked(post.liked);
@@ -78,16 +67,28 @@ export function VibeCard({
       ([entry]) => {
         const video = videoRef.current;
         if (!video) return;
-        if (entry && entry.isIntersecting) void playWithSound(video);
+        activeRef.current = Boolean(entry?.isIntersecting);
+        if (activeRef.current) void playWithSound(video).then((playing) => setNeedsPlay(!playing));
         else {
           video.pause();
-          video.currentTime = 0;
         }
       },
-      { threshold: 0.65 },
+      { threshold: 0.51 },
     );
     observer.observe(node);
-    return () => observer.disconnect();
+    const unlock = () => {
+      const video = videoRef.current;
+      if (video && activeRef.current && video.paused) {
+        void playWithSound(video).then((playing) => setNeedsPlay(!playing));
+      }
+    };
+    document.addEventListener("pointerdown", unlock, { once: true });
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("pointerdown", unlock);
+      videoRef.current?.pause();
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+    };
   }, [mediaUrl]);
 
   const doLike = (forceOn = false) => {
@@ -113,7 +114,7 @@ export function VibeCard({
     if (now - lastTap.current < 300) {
       const rect = e.currentTarget.getBoundingClientRect();
       const id = now;
-      if (userId) setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+      setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
       setTimeout(() => setHearts((h) => h.filter((x) => x.id !== id)), 900);
       doLike(true);
       lastTap.current = 0;
@@ -121,9 +122,9 @@ export function VibeCard({
     }
     lastTap.current = now;
     const video = videoRef.current;
-    setTimeout(() => {
-      if (lastTap.current !== now || !video) return;
-      if (video.paused) void playWithSound(video);
+    tapTimer.current = setTimeout(() => {
+      if (lastTap.current !== now || !video || !activeRef.current) return;
+      if (video.paused) void playWithSound(video).then((playing) => setNeedsPlay(!playing));
       else video.pause();
     }, 300);
   };
@@ -134,7 +135,7 @@ export function VibeCard({
     <div
       ref={containerRef}
       id={`reel-${post.id}`}
-      className={cn("relative mx-auto w-full snap-start snap-always overflow-hidden bg-background", compactHeight ? "h-[calc(100dvh-8.5rem)] max-w-[calc((100dvh-8.5rem)*9/16)]" : "h-[100dvh] max-w-[calc(100dvh*9/16)]")}
+      className={cn("relative mx-auto w-full snap-start snap-always overflow-hidden bg-background", compactHeight ? "h-[calc(100dvh-8.5rem)] max-w-[calc((100dvh-8.5rem)*9/16)]" : "h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))] max-w-[calc((100dvh-5rem)*9/16)]")}
     >
       <div className="absolute inset-0" onClick={handleTap}>
         {mediaUrl ? (
@@ -146,7 +147,7 @@ export function VibeCard({
               loop
               playsInline
               preload="metadata"
-              className="size-full object-cover"
+               className="size-full object-contain"
             />
           ) : (
             <img src={mediaUrl} alt={post.caption ?? "Vibe"} className="size-full object-cover" />
@@ -163,7 +164,18 @@ export function VibeCard({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
 
-      <div className="absolute right-2 bottom-28 z-10 flex flex-col items-center gap-5">
+      <div className="absolute inset-x-0 top-0 z-10 flex h-16 items-center justify-between px-4">
+        <span className="text-xl font-semibold">Vibe</span>
+        <Button asChild variant="ghost" size="icon" className="size-11 [&_svg]:size-7">
+          <Link to="/create" aria-label="Camera — upload a reel" title="Upload a reel"><Camera /></Link>
+        </Button>
+      </div>
+      {needsPlay && post.mediaType === "video" ? <Button variant="ghost" size="icon" aria-label="Play video" className="absolute top-1/2 left-1/2 z-10 size-16 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background/50 [&_svg]:size-8" onClick={() => {
+        const video = videoRef.current;
+        if (video) void playWithSound(video).then((playing) => setNeedsPlay(!playing));
+      }}><Play /></Button> : null}
+
+      <div className="absolute right-1 bottom-5 z-10 flex w-14 flex-col items-center gap-3">
         <Button
           variant="ghost"
           type="button"
@@ -198,13 +210,11 @@ export function VibeCard({
           type="button"
           aria-label="Share"
           onClick={() => {
-            if ("share" in navigator) void shareNatively(post.id, post.caption);
-            else setShareOpen(true);
+            void shareNatively(post.id, post.caption);
           }}
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Send className="size-8" />
-          <span className="text-xs font-semibold">Share</span>
         </Button>
         <Button
           variant="ghost"
@@ -219,21 +229,16 @@ export function VibeCard({
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
           <Bookmark className={cn("size-8", saved && "fill-foreground")} />
-          <span className="text-xs font-semibold">Save</span>
         </Button>
-        <div className="rounded-md bg-background/45 p-1 backdrop-blur-sm">
+        <div className="rounded-md bg-background/45 p-1 backdrop-blur-sm [&>div]:flex-col">
           <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />
         </div>
         <Button variant="ghost" size="icon" type="button" aria-label="More options" title="More options" onClick={() => setMenuOpen(true)} className="size-12 hover:bg-transparent [&_svg]:size-8">
           <MoreHorizontal className="size-8" />
         </Button>
-        <Avatar className="size-9 rounded-lg border-2 border-foreground">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
-          <AvatarFallback className="rounded-lg bg-brand text-[10px]">♪</AvatarFallback>
-        </Avatar>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-24 space-y-2 pr-20 pl-4 [&>*]:pointer-events-auto">
+      <div className="pointer-events-none absolute right-16 bottom-5 left-0 space-y-3 pr-2 pl-4 [&>*]:pointer-events-auto">
         <div className="flex items-center gap-2">
           <Link to="/profile/$userId" params={{ userId: post.author.id }} className="ring-brand rounded-full">
             <Avatar className="size-9 border border-border">
@@ -246,7 +251,7 @@ export function VibeCard({
           <Link
             to="/profile/$userId"
             params={{ userId: post.author.id }}
-            className="truncate text-sm font-semibold"
+            className="min-w-0 truncate text-sm font-semibold"
           >
             @{post.author.username}
           </Link>
@@ -266,20 +271,20 @@ export function VibeCard({
                 });
               }}
               className={cn(
-                "h-8 rounded-md border px-3 text-xs font-semibold transition-all",
+                "h-8 shrink-0 rounded-md border px-2 text-xs font-semibold transition-all",
                 following
                   ? "border-border bg-surface-2/60 text-foreground"
                   : "border-transparent bg-brand text-primary-foreground shadow-neon",
               )}
             >
-              {following ? "Following" : "Follow"}
+              {!following ? <Plus className="size-3" /> : null}{following ? "Following" : "Follow"}
             </Button>
           ) : null}
         </div>
         {post.caption ? <p className="line-clamp-2 text-sm">{post.caption}</p> : null}
         <div className="flex items-center gap-2 overflow-hidden text-xs">
-          <Music2 className="size-3.5 shrink-0" />
-          <span className="truncate">Original sound · @{post.author.username}</span>
+          <span className="reel-disc grid size-7 shrink-0 place-items-center rounded-full border border-foreground/60 bg-surface-2"><Disc3 className="size-5" /></span>
+          <span className="min-w-0 overflow-hidden"><span className="reel-track"><span className="pr-8">Original sound · @{post.author.username}</span><span className="pr-8" aria-hidden="true">Original sound · @{post.author.username}</span></span></span>
         </div>
         <div className="flex items-center gap-2">
           {post.ratingCount > 0 ? (
@@ -291,7 +296,6 @@ export function VibeCard({
       </div>
 
       <ReelActionSheet open={menuOpen} onOpenChange={setMenuOpen} post={post} />
-      <ReelShareSheet open={shareOpen} onOpenChange={setShareOpen} post={post} />
     </div>
   );
 }

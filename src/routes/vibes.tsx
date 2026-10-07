@@ -8,7 +8,7 @@ import { z } from "zod";
 import { BottomNav } from "@/components/famous/BottomNav";
 import { CommentsSheet } from "@/components/famous/CommentsSheet";
 import { VibeCard } from "@/components/famous/VibeCard";
-import { getVibes } from "@/lib/famous.functions";
+import { getFeed, getVibes } from "@/lib/famous.functions";
 
 export const Route = createFileRoute("/vibes")({
   validateSearch: z.object({ post: z.string().optional() }),
@@ -30,29 +30,37 @@ export const Route = createFileRoute("/vibes")({
 
 function VibesPage() {
   const fetchVibes = useServerFn(getVibes);
+  const fetchFeed = useServerFn(getFeed);
   const { post: targetId } = Route.useSearch();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["vibes"],
     queryFn: () => fetchVibes(),
   });
+  const { data: feedPosts } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed(), enabled: Boolean(targetId) });
   const posts = useMemo(() => {
     if (!data || !targetId) return data ?? [];
-    const target = data.find((item) => item.id === targetId);
+    const target = data.find((item) => item.id === targetId) ?? feedPosts?.find((item) => item.id === targetId && item.mediaType === "video");
     return target ? [target, ...data.filter((item) => item.id !== targetId)] : data;
-  }, [data, targetId]);
+  }, [data, targetId, feedPosts]);
   useEffect(() => { if (targetId) document.getElementById(`reel-${targetId}`)?.scrollIntoView(); }, [targetId, posts.length]);
 
   return (
     <div className="bg-background">
       <h1 className="sr-only">Vibes</h1>
-      <div className="no-scrollbar h-[100dvh] snap-y snap-mandatory overflow-y-scroll">
+      <div className="no-scrollbar h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))] snap-y snap-mandatory overflow-y-scroll" onScroll={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        event.currentTarget.querySelectorAll<HTMLVideoElement>("video[data-reel]").forEach((video) => {
+          const rect = video.getBoundingClientRect();
+          if (rect.top < bounds.top - 1 || rect.bottom > bounds.bottom + 1) video.pause();
+        });
+      }}>
         {isLoading ? (
           <div className="grid h-[100dvh] place-items-center text-sm text-muted-foreground">
             Loading vibes…
           </div>
-        ) : posts.length === 0 ? (
+        ) : error ? <div className="grid h-full place-items-center text-destructive">Could not load reels. Please try again.</div> : posts.length === 0 ? (
           <div className="grid h-[100dvh] place-items-center px-8 text-center">
             <div>
               <p className="font-script text-brand text-4xl">No vibes yet</p>
