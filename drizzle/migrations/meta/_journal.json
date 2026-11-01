@@ -8,6 +8,13 @@
       "when": 1791197574363,
       "tag": "0000_create_stories",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793505939776,
+      "tag": "0001_add_ai_quality_columns",
+      "breakpoints": true
     }
   ]
 }
