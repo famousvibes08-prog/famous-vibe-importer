@@ -3,8 +3,9 @@ import { Home, PlusSquare, Search, CircleUserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ReelTabIcon } from "./ReelIcons";
+import type { ComponentType, SVGProps } from "react";
 
-const items: ReadonlyArray<{ to: "/" | "/explore" | "/vibes" | "/create" | "/profile"; label: string; icon: typeof Home; primary?: boolean }> = [
+const items: ReadonlyArray<{ to: "/" | "/explore" | "/vibes" | "/create" | "/profile"; label: string; icon: ComponentType<SVGProps<SVGSVGElement>>; primary?: boolean }> = [
   { to: "/", label: "Home", icon: Home },
   { to: "/explore", label: "Explore", icon: Search },
   { to: "/vibes", label: "Vibe", icon: ReelTabIcon, primary: true },
@@ -23,7 +24,7 @@ export function BottomNav() {
           const Icon = item.icon;
           return (
             <li key={item.to}>
-                <Button asChild variant="ghost" className="h-auto rounded-none p-0 hover:bg-transparent">
+                <Button asChild variant="ghost" className="h-auto rounded-none p-0 hover:bg-transparent [&_svg]:size-7">
                 <Link
                 to={item.to}
                 aria-label={item.label}
