@@ -121,6 +121,9 @@ export type Database = {
       }
       posts: {
         Row: {
+          ai_flagged: boolean
+          ai_note: string | null
+          ai_stars: number | null
           avg_rating: number
           caption: string | null
           comment_count: number
@@ -136,6 +139,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_flagged?: boolean
+          ai_note?: string | null
+          ai_stars?: number | null
           avg_rating?: number
           caption?: string | null
           comment_count?: number
@@ -151,6 +157,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_flagged?: boolean
+          ai_note?: string | null
+          ai_stars?: number | null
           avg_rating?: number
           caption?: string | null
           comment_count?: number
