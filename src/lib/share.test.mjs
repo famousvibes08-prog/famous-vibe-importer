@@ -41,10 +41,12 @@ test("canceling native sharing neither copies nor shows an error", async () => {
   assert.deepEqual(copied, []);
   assert.deepEqual(notices, []);
 });
-test("successful native sharing sends the URL without copying", async () => {
+test("successful native sharing sends only the clean URL with no caption text", async () => {
   let shared;
   const copied = setup(async (payload) => { shared = payload; });
-  await shareNatively(postId, "My reel");
-  assert.equal(shared.url, url);
+  await shareNatively(postId);
+  assert.deepEqual(shared, { url });
+  assert.equal(shared.text, undefined);
+  assert.equal(shared.title, undefined);
   assert.deepEqual(copied, []);
 });

@@ -27,6 +27,8 @@ export type FeedPost = {
   saved: boolean;
   myRating: number | null;
   followingAuthor: boolean;
+  aiStars: number | null;
+  aiFlagged: boolean;
 };
 
 export type Story = {
@@ -64,7 +66,7 @@ export async function insertStory(supabase: Client, userId: string, input: { med
 }
 
 const POST_COLUMNS =
-  "id,user_id,media_url,media_type,caption,is_vibe,like_count,comment_count,avg_rating,rating_count,created_at";
+  "id,user_id,media_url,media_type,caption,is_vibe,like_count,comment_count,avg_rating,rating_count,created_at,ai_stars,ai_flagged";
 
 function toAuthor(row: {
   id: string;
@@ -135,6 +137,8 @@ async function decorate(
       saved: savedSet.has(r["id"] as string),
       myRating: ratingMap.get(r["id"] as string) ?? null,
       followingAuthor: followSet.has(authorId),
+      aiStars: r["ai_stars"] == null ? null : Number(r["ai_stars"]),
+      aiFlagged: Boolean(r["ai_flagged"]),
     };
   });
 }
@@ -168,6 +172,7 @@ async function loadRankedFeed(supabase: Client, userId: string | null, vibesOnly
     .from("posts")
     .select(POST_COLUMNS)
     .eq("hidden", false)
+    .eq("ai_flagged", false)
     .order("created_at", { ascending: false })
     .limit(120);
   if (vibesOnly) query = query.eq("is_vibe", true).eq("media_type", "video");
@@ -359,7 +364,7 @@ export async function loadProfile(supabase: Client, userId: string | null, targe
   if (error) throw new Error(error.message);
   if (!profile) throw new Error("Profile not found");
 
-  const [posts, followers, following, isFollowing] = await Promise.all([
+  const [posts, followers, following, isFollowing, qualityRows] = await Promise.all([
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("user_id", targetId),
     supabase
       .from("follows")
@@ -377,7 +382,18 @@ export async function loadProfile(supabase: Client, userId: string | null, targe
           .eq("following_id", targetId)
           .maybeSingle()
       : { data: null },
+    supabase.from("posts").select("ai_stars,ai_flagged").eq("user_id", targetId).limit(500),
   ]);
+
+  const qualityPostRows = qualityRows.data ?? [];
+  const starValues = qualityPostRows
+    .filter((r) => !r.ai_flagged && r.ai_stars != null)
+    .map((r) => Number(r.ai_stars));
+  const quality = {
+    avgStars: starValues.length ? starValues.reduce((sum, stars) => sum + stars, 0) / starValues.length : 0,
+    scanned: starValues.length,
+    flagged: qualityPostRows.filter((r) => r.ai_flagged).length,
+  };
 
   return {
     id: profile.id,
@@ -387,6 +403,7 @@ export async function loadProfile(supabase: Client, userId: string | null, targe
     avatarUrl: profile.avatar_url,
     isSelf: targetId === userId,
     following: Boolean(isFollowing.data),
+    quality,
     counts: {
       posts: posts.count ?? 0,
       followers: followers.count ?? 0,
@@ -395,13 +412,20 @@ export async function loadProfile(supabase: Client, userId: string | null, targe
   };
 }
 
-export async function loadUserPosts(supabase: Client, userId: string | null, targetId: string) {
-  const { data, error } = await supabase
+export async function loadUserPosts(
+  supabase: Client,
+  userId: string | null,
+  targetId: string,
+  options?: { includeFlagged?: boolean },
+) {
+  let query = supabase
     .from("posts")
     .select(POST_COLUMNS)
     .eq("user_id", targetId)
     .order("created_at", { ascending: false })
     .limit(120);
+  if (!options?.includeFlagged) query = query.eq("ai_flagged", false);
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
   return decorate(supabase, userId, (data ?? []) as Array<Record<string, unknown>>);
 }
@@ -446,4 +470,40 @@ export async function resolveShortCode(supabase: Client, code: string) {
     .limit(1)
     .maybeSingle();
   return data?.id ?? null;
+}
+
+export async function updateOwnPost(
+  supabase: Client,
+  userId: string,
+  postId: string,
+  caption: string,
+) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ caption: caption || null })
+    .eq("id", postId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function deleteOwnPost(supabase: Client, userId: string, postId: string) {
+  const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function saveQualityResult(
+  supabase: Client,
+  userId: string,
+  postId: string,
+  verdict: { safe: boolean; stars: number; reason: string },
+) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ ai_stars: verdict.stars, ai_note: verdict.reason, ai_flagged: !verdict.safe })
+    .eq("id", postId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return verdict;
 }
