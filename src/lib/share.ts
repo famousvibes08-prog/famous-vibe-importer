@@ -4,7 +4,7 @@ export function getPostShareUrl(postId: string) {
   return `https://www.famousvibe.com/vibe/${postId}`;
 }
 
-export async function sharePost(postId: string, caption?: string | null) {
+export async function sharePost(postId: string) {
   const url = getPostShareUrl(postId);
   try {
     await navigator.clipboard.writeText(url);
@@ -14,16 +14,17 @@ export async function sharePost(postId: string, caption?: string | null) {
   }
 }
 
-export async function shareNatively(postId: string, caption?: string | null) {
+/** Shares only the clean reel URL — no title, caption or extra text. */
+export async function shareNatively(postId: string) {
   const url = getPostShareUrl(postId);
   if (typeof navigator.share !== "function") {
-    await sharePost(postId, caption);
+    await sharePost(postId);
     return;
   }
   try {
-    await navigator.share({ title: "FamousVibe", text: caption?.slice(0, 120) || "Watch this reel", url });
+    await navigator.share({ url });
   } catch (error) {
     if (error && typeof error === "object" && "name" in error && error.name === "AbortError") return;
-    await sharePost(postId, caption);
+    await sharePost(postId);
   }
 }
