@@ -23,7 +23,7 @@ function parseImageDataUrl(dataUrl: string) {
 }
 
 export async function runQualityCheck(imageDataUrl: string): Promise<QualityVerdict> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI quality check is not configured yet");
 
   const frame = parseImageDataUrl(imageDataUrl);
