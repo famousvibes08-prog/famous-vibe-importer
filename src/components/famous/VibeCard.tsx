@@ -212,7 +212,7 @@ export function VibeCard({
           type="button"
           aria-label="Share"
           onClick={() => {
-            void shareNatively(post.id, post.caption);
+            void shareNatively(post.id);
           }}
           className="flex h-auto min-h-12 w-12 flex-col items-center gap-1 p-1 hover:bg-transparent [&_svg]:size-8"
         >
