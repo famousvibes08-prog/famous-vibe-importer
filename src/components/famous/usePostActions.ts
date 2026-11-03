@@ -12,6 +12,8 @@ import {
   toggleLike,
   toggleSave,
   followUser,
+  updatePostCaption,
+  deletePost,
 } from "@/lib/famous.functions";
 import { getSignedUrl } from "@/lib/media";
 import { downloadWatermarked } from "@/lib/watermark";
@@ -26,6 +28,8 @@ export function usePostActions() {
   const interest = useServerFn(setInterest);
   const report = useServerFn(reportPost);
   const follow = useServerFn(followUser);
+  const editCaption = useServerFn(updatePostCaption);
+  const remove = useServerFn(deletePost);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["feed"] });
@@ -74,6 +78,16 @@ export function usePostActions() {
       guard(async () => {
         const res = await follow({ data: { targetId } });
         toast.success(res.following ? "Following" : "Unfollowed");
+      }),
+    onEditCaption: (postId: string, caption: string) =>
+      guard(async () => {
+        await editCaption({ data: { postId, caption } });
+        toast.success("Reel updated");
+      }),
+    onDelete: (postId: string) =>
+      guard(async () => {
+        await remove({ data: { postId } });
+        toast.success("Reel deleted");
       }),
     onDownload: async (post: FeedPost) => {
       const url = await getSignedUrl("media", post.mediaUrl);

@@ -10,11 +10,10 @@ export function ReelShareSheet({ post, open, onOpenChange }: {
   onOpenChange: (open: boolean) => void;
 }) {
   const url = getPostShareUrl(post.id);
-  const text = encodeURIComponent(`${post.caption?.slice(0, 120) || "Watch this reel"} ${url}`);
   const links = [
-    { label: "WhatsApp", href: `https://api.whatsapp.com/send?text=${text}` },
-    { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.caption || "Watch this reel")}` },
-    { label: "X", href: `https://twitter.com/intent/tweet?text=${text}` },
+    { label: "WhatsApp", href: `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}` },
+    { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(url)}` },
+    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(url)}` },
   ];
 
   return <Drawer open={open} onOpenChange={onOpenChange}>
@@ -30,7 +29,7 @@ export function ReelShareSheet({ post, open, onOpenChange }: {
             <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Share on ${label}`}><ExternalLink />{label}</a>
           </Button>)}
         </div>
-        <Button className="h-12 w-full bg-brand" onClick={() => void shareNatively(post.id, post.caption)}>
+        <Button className="h-12 w-full bg-brand" onClick={() => void shareNatively(post.id)}>
           {typeof navigator !== "undefined" && "share" in navigator ? <Share2 /> : <Send />}
           {typeof navigator !== "undefined" && "share" in navigator ? "More apps" : "Copy link"}
         </Button>

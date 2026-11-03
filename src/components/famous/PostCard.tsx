@@ -105,7 +105,7 @@ export function PostCard({
         <button
           type="button"
           aria-label="Share"
-           onClick={() => void shareNatively(post.id, post.caption)}
+           onClick={() => void shareNatively(post.id)}
           className="rounded-full p-2"
         >
           <ReelShareIcon className="size-6" />
