@@ -14,3 +14,5 @@
 - Use a full-ID public reel route alongside legacy short links, because shared URLs must identify the exact reel without prefix collisions.
 - Keep browser video exports at source dimensions with explicit re-encoding disclosure and original-file fallback, because appending an end card requires encoding and browser support varies.
 - Store ephemeral social content with an explicit expiry timestamp and filter it in both access rules and reads, because Stories must disappear after 24 hours.
+- Run upload AI quality checks through `src/lib/quality.server.ts` with the shared gateway helpers in `lovable-ai.server.ts`, importing the module only inside server-function handlers, because gateway code and the API key must stay out of the client bundle.
+- Capture upload preview frames in the browser (`src/lib/quality.ts`) and send them as base64 image data URLs, because server-side video decoding is unavailable.
