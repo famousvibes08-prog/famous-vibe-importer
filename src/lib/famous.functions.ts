@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { optionalSupabaseAuth } from "./optional-auth";
 import {
+  deleteOwnPost,
   getFeedFor,
   getVibesFor,
   insertComment,
@@ -13,9 +14,11 @@ import {
   loadProfile,
   loadSavedPosts,
   loadUserPosts,
+  saveQualityResult,
   toggleFollowFor,
   toggleLikeFor,
   toggleSaveFor,
+  updateOwnPost,
   updateOwnProfile,
   upsertInterest,
   upsertRating,
@@ -145,7 +148,9 @@ export const getUserPosts = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const target = data.userId ?? context.userId;
     if (!target) throw new Error("Sign in to view your posts");
-    return loadUserPosts(context.supabase, context.userId, target);
+    return loadUserPosts(context.supabase, context.userId, target, {
+      includeFlagged: target === context.userId,
+    });
   });
 
 export const getSavedPosts = createServerFn({ method: "GET" })
@@ -174,3 +179,39 @@ export const resolveShortLink = createServerFn({ method: "GET" })
   .middleware([optionalSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ code: z.string().regex(/^[0-9a-f]{8}$/) }).parse(data))
   .handler(async ({ data, context }) => ({ postId: await resolveShortCode(context.supabase, data.code) }));
+
+export const updatePostCaption = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ postId: z.string().uuid(), caption: z.string().max(2200) }).parse(data),
+  )
+  .handler(async ({ data, context }) =>
+    updateOwnPost(context.supabase, context.userId, data.postId, data.caption),
+  );
+
+export const deletePost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => postIdSchema.parse(data))
+  .handler(async ({ data, context }) =>
+    deleteOwnPost(context.supabase, context.userId, data.postId),
+  );
+
+export const analyzePostQuality = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ postId: z.string().uuid(), imageDataUrl: z.string().startsWith("data:image/") })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: owned } = await context.supabase
+      .from("posts")
+      .select("id")
+      .eq("id", data.postId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!owned) throw new Error("You can only inspect your own uploads");
+    const { runQualityCheck } = await import("./quality.server");
+    const verdict = await runQualityCheck(data.imageDataUrl);
+    return saveQualityResult(context.supabase, context.userId, data.postId, verdict);
+  });
