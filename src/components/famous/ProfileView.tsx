@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
+import { Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -37,6 +38,15 @@ function PostThumb({ post }: { post: FeedPost }) {
             className="size-full object-cover"
           />
         )
+      ) : null}
+      {post.aiFlagged ? (
+        <span className="absolute right-1 bottom-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+          Restricted
+        </span>
+      ) : post.aiStars != null ? (
+        <span className="absolute right-1 bottom-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-neon-pink">
+          ★{post.aiStars}
+        </span>
       ) : null}
     </div>
   );
@@ -211,6 +221,26 @@ export function ProfileView({ userId }: { userId?: string }) {
         <p className="text-sm font-semibold">{profile.displayName || profile.username}</p>
         <p className="text-xs text-muted-foreground">@{profile.username}</p>
         {profile.bio ? <p className="mt-2 text-sm">{profile.bio}</p> : null}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2">
+          <Sparkles className="size-5 text-neon-pink" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">AI Video Quality</p>
+          <p className="text-xs text-muted-foreground">
+            {profile.quality.scanned > 0
+              ? `Average ${profile.quality.avgStars.toFixed(1)}/5 across ${profile.quality.scanned} scanned upload${profile.quality.scanned === 1 ? "" : "s"}`
+              : "Uploads are scanned automatically for safety and quality."}
+            {isSelf && profile.quality.flagged > 0 ? ` · ${profile.quality.flagged} restricted` : ""}
+          </p>
+        </div>
+        {profile.quality.scanned > 0 ? (
+          <span className="text-base font-bold text-neon-pink">
+            ★ {profile.quality.avgStars.toFixed(1)}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4">

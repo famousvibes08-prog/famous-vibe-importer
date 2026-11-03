@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/famous/AppShell";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { createPost } from "@/lib/famous.functions";
+import { analyzePostQuality, createPost } from "@/lib/famous.functions";
+import { captureMediaFrame } from "@/lib/quality";
 import { uploadToBucket } from "@/lib/media";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,6 +36,7 @@ function CreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const submit = useServerFn(createPost);
+  const analyze = useServerFn(analyzePostQuality);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -63,10 +65,32 @@ function CreatePage() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) throw new Error("You need to be signed in");
       const { path } = await uploadToBucket("media", auth.user.id, file);
-      await submit({ data: { mediaPath: path, mediaType, caption: caption.trim(), isVibe } });
+      const { id } = await submit({ data: { mediaPath: path, mediaType, caption: caption.trim(), isVibe } });
+      try {
+        const frame = await captureMediaFrame(file);
+        if (frame) {
+          const verdict = await analyze({ data: { postId: id, imageDataUrl: frame } });
+          if (!verdict.safe) {
+            toast.error("AI check flagged this upload — it's restricted and won't appear in feeds", {
+              description: verdict.reason,
+              duration: 9000,
+            });
+          } else {
+            toast.success(`AI quality check passed — ${verdict.stars} star${verdict.stars > 1 ? "s" : ""}`, {
+              description: verdict.reason,
+              duration: 7000,
+            });
+          }
+        }
+      } catch {
+        toast.message("AI quality check is finishing", {
+          description: "You'll see the score on your profile shortly.",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       queryClient.invalidateQueries({ queryKey: ["vibes"] });
       queryClient.invalidateQueries({ queryKey: ["user-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Posted");
       navigate({ to: isVibe ? "/vibes" : "/" });
     } catch (error) {
@@ -126,6 +150,17 @@ function CreatePage() {
             <p className="text-xs text-muted-foreground">Shows in the full-screen Vibes feed</p>
           </div>
           <Switch checked={isVibe} onCheckedChange={setIsVibe} aria-label="Post as a Vibe" />
+        </div>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+          <Sparkles className="mt-0.5 size-5 shrink-0 text-neon-pink" />
+          <div>
+            <p className="text-sm font-medium">AI video quality check</p>
+            <p className="text-xs text-muted-foreground">
+              Every upload is scanned automatically. Safe videos get a 1–5 star quality score on your
+              profile; videos breaking our guidelines are restricted.
+            </p>
+          </div>
         </div>
 
         <Button
