@@ -16,10 +16,17 @@ First check safety: nudity or sexual content, graphic violence or gore, hate sym
 If it is safe, judge production quality from this frame: sharpness, lighting, framing and composition. stars is an integer from 1 (very low quality) to 5 (excellent).
 Write reason as one short sentence (under 90 characters) addressed to the creator.`;
 
+function parseImageDataUrl(dataUrl: string) {
+  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
+  if (!match) throw new Error("Frame must be a base64 image data URL");
+  return { mediaType: match[1] as string, base64: match[2] as string };
+}
+
 export async function runQualityCheck(imageDataUrl: string): Promise<QualityVerdict> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("AI quality check is not configured yet");
 
+  const frame = parseImageDataUrl(imageDataUrl);
   const { model } = createLovableResponsesProvider({ apiKey, model: "openai/gpt-6-astra" });
   const result = streamText({
     model,
@@ -30,7 +37,7 @@ export async function runQualityCheck(imageDataUrl: string): Promise<QualityVerd
         role: "user",
         content: [
           { type: "text", text: "Inspect this uploaded FamousVibe reel frame." },
-          { type: "image", image: new URL(imageDataUrl) },
+          { type: "file", data: frame.base64, mediaType: frame.mediaType },
         ],
       },
     ],
