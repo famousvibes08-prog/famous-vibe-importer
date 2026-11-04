@@ -12,3 +12,8 @@
 - [ ] Connect www.famousvibe.com before external shared links can work (blocked: domain connection/ownership confirmation).
 - [ ] Confirm actual installed-app share sheet and reel sound on a physical phone (blocked: real-device browser testing).
 - [x] Fix failed native sharing with copy-link fallback; refresh curved share icon, navigation, action spacing and menu corners (five automated tests and desktop/mobile UI checks passed).
+
+- [x] Remove Copy link from the 3-dots sheet and add Edit (caption) plus Delete with confirmation, only on the creator's own posts.
+- [x] Share only the clean https://www.famousvibe.com/vibe/{postId} URL with no caption text (native payload, app links and share sheet).
+- [x] Add the AI video quality check: upload scanning, flagged-video restriction, 1-5 star score and the profile AI Video Quality widget.
+- [ ] Confirm the AI flag and star score end-to-end with a real upload on a physical phone (blocked: real-device browser testing).
