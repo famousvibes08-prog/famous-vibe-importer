@@ -4,7 +4,6 @@ import { ReelShareIcon } from "./ReelIcons";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostMenu } from "./PostMenu";
-import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSignedUrl } from "@/lib/media";
 import { shareNatively } from "@/lib/share";
@@ -111,7 +110,11 @@ export function PostCard({
           <ReelShareIcon className="size-6" />
         </button>
         <div className="ml-auto flex items-center gap-2">
-          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="sm" />
+          {post.aiStars != null ? (
+            <span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-semibold text-neon-pink">
+              ★ {post.aiStars} AI
+            </span>
+          ) : null}
           <button
             type="button"
             aria-label={post.saved ? "Remove from saved" : "Save"}
@@ -126,10 +129,8 @@ export function PostCard({
       <div className="space-y-1 px-4 pb-4">
         <p className="text-sm font-semibold">
           {post.likeCount} like{post.likeCount === 1 ? "" : "s"}
-          {post.ratingCount > 0 ? (
-            <span className="ml-2 font-normal text-muted-foreground">
-              ★ {post.avgRating.toFixed(1)} ({post.ratingCount})
-            </span>
+          {post.aiStars != null ? (
+            <span className="ml-2 font-normal text-muted-foreground">AI ★ {post.aiStars}</span>
           ) : null}
         </p>
         {post.caption ? (

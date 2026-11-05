@@ -16,4 +16,6 @@
 - [x] Remove Copy link from the 3-dots sheet and add Edit (caption) plus Delete with confirmation, only on the creator's own posts.
 - [x] Share only the clean https://www.famousvibe.com/vibe/{postId} URL with no caption text (native payload, app links and share sheet).
 - [x] Add the AI video quality check: upload scanning, flagged-video restriction, 1-5 star score and the profile AI Video Quality widget.
+- [x] Make ratings AI-only: removed manual star input from reels and feed; overlays and posts now show the AI score, and the AI prompt targets 4-5 stars for good uploads.
+- [x] Add tags to the upload flow (comma separated, appended as #hashtags to the caption).
 - [ ] Confirm the AI flag and star score end-to-end with a real upload on a physical phone (blocked: real-device browser testing).

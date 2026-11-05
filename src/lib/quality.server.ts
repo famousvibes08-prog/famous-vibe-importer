@@ -13,7 +13,7 @@ const verdictSchema = z.object({
 
 const INSTRUCTIONS = `You are FamousVibe's AI video quality inspector. You receive one frame captured from an uploaded reel.
 First check safety: nudity or sexual content, graphic violence or gore, hate symbols, self-harm, illegal activity or similar guideline violations make the video unsafe.
-If it is safe, judge production quality from this frame: sharpness, lighting, framing and composition. stars is an integer from 1 (very low quality) to 5 (excellent).
+If it is safe, judge production quality from this frame: sharpness, lighting, framing and composition. Good or excellent quality must score 4 or 5 stars; use 1-3 stars only for poor, blurry or mediocre quality. Unsafe content always scores 1.
 Write reason as one short sentence (under 90 characters) addressed to the creator.`;
 
 function parseImageDataUrl(dataUrl: string) {

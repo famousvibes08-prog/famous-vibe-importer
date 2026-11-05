@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/famous/AppShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,19 @@ export const Route = createFileRoute("/_authenticated/create")({
   component: CreatePage,
 });
 
+function withTags(caption: string, tags: string) {
+  const list = Array.from(
+    new Set(
+      tags
+        .split(/[,\s]+/)
+        .map((tag) => tag.replace(/[^a-z0-9_]/gi, "").toLowerCase())
+        .filter(Boolean),
+    ),
+  ).slice(0, 10);
+  if (list.length === 0) return caption;
+  return [caption, ...list.map((tag) => `#${tag}`)].join(" ").slice(0, 2200);
+}
+
 function CreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -42,6 +56,7 @@ function CreatePage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
+  const [tags, setTags] = useState("");
   const [isVibe, setIsVibe] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -65,7 +80,7 @@ function CreatePage() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) throw new Error("You need to be signed in");
       const { path } = await uploadToBucket("media", auth.user.id, file);
-      const { id } = await submit({ data: { mediaPath: path, mediaType, caption: caption.trim(), isVibe } });
+      const { id } = await submit({ data: { mediaPath: path, mediaType, caption: withTags(caption.trim(), tags), isVibe } });
       try {
         const frame = await captureMediaFrame(file);
         if (frame) {
@@ -142,6 +157,18 @@ function CreatePage() {
             placeholder="Say something about this vibe…"
             className="min-h-24 bg-surface-2"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tags">Tags</Label>
+          <Input
+            id="tags"
+            value={tags}
+            onChange={(event) => setTags(event.target.value)}
+            placeholder="dance, comedy, music"
+            className="bg-surface-2"
+          />
+          <p className="text-xs text-muted-foreground">Optional · comma separated, shown as #hashtags</p>
         </div>
 
         <div className="flex items-center justify-between rounded-2xl border border-border bg-surface px-4 py-3">

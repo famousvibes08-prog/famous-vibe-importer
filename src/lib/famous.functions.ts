@@ -21,7 +21,6 @@ import {
   updateOwnPost,
   updateOwnProfile,
   upsertInterest,
-  upsertRating,
   resolveShortCode,
   loadActiveStories,
   insertStory,
@@ -86,15 +85,6 @@ export const addComment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) =>
     insertComment(context.supabase, context.userId, data.postId, data.body),
-  );
-
-export const ratePost = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z.object({ postId: z.string().uuid(), stars: z.number().int().min(1).max(5) }).parse(data),
-  )
-  .handler(async ({ data, context }) =>
-    upsertRating(context.supabase, context.userId, data.postId, data.stars),
   );
 
 export const setInterest = createServerFn({ method: "POST" })

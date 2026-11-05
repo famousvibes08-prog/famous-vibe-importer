@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   reportPost,
   setInterest,
-  ratePost,
   toggleLike,
   toggleSave,
   followUser,
@@ -24,7 +23,6 @@ export function usePostActions() {
   const navigate = useNavigate();
   const like = useServerFn(toggleLike);
   const save = useServerFn(toggleSave);
-  const rate = useServerFn(ratePost);
   const interest = useServerFn(setInterest);
   const report = useServerFn(reportPost);
   const follow = useServerFn(followUser);
@@ -59,11 +57,6 @@ export function usePostActions() {
   return {
     onLike: (postId: string) => guard(() => like({ data: { postId } })),
     onSave: (postId: string) => guard(() => save({ data: { postId } })),
-    onRate: (postId: string, stars: number) =>
-      guard(async () => {
-        await rate({ data: { postId, stars } });
-        toast.success(`Rated ${stars} star${stars > 1 ? "s" : ""}`);
-      }),
     onInterest: (postId: string, state: "interested" | "not_interested") =>
       guard(async () => {
         await interest({ data: { postId, state } });

@@ -5,7 +5,6 @@ import { Bookmark, Camera, Disc3, Heart, MessageCircle, MoreHorizontal, Play, Pl
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ReelActionSheet } from "./ReelActionSheet";
-import { StarRating } from "./StarRating";
 import { usePostActions } from "./usePostActions";
 import { useSessionUser } from "@/hooks/use-session";
 import { useSignedUrl } from "@/lib/media";
@@ -137,6 +136,8 @@ export function VibeCard({
     <div
       ref={containerRef}
       id={`reel-${post.id}`}
+      data-post-id={post.id}
+      data-owner-id={post.author.id}
       className={cn("relative mx-auto w-full snap-start snap-always overflow-hidden bg-background", compactHeight ? "h-[calc(100dvh-8.5rem)] max-w-[calc((100dvh-8.5rem)*9/16)]" : "h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))] max-w-[calc((100dvh-5rem)*9/16)]")}
     >
       <div className="absolute inset-0" onClick={handleTap}>
@@ -232,9 +233,15 @@ export function VibeCard({
         >
           <Bookmark className={cn("size-8", saved && "fill-foreground")} />
         </Button>
-        <div className="flex w-12 justify-center">
-          <StarRating value={post.myRating} onRate={(stars) => actions.onRate(post.id, stars)} size="reel" />
-        </div>
+        {post.aiStars != null ? (
+          <div
+            className="flex h-12 w-12 flex-col items-center justify-center"
+            title={`AI quality score: ${post.aiStars}/5`}
+          >
+            <span className="text-xs font-bold text-neon-pink">★ {post.aiStars}</span>
+            <span className="text-[9px] text-muted-foreground">AI</span>
+          </div>
+        ) : null}
         <Button variant="ghost" size="icon" type="button" aria-label="More options" title="More options" onClick={() => setMenuOpen(true)} className="size-12 hover:bg-transparent [&_svg]:size-8">
           <MoreHorizontal className="size-8" />
         </Button>
@@ -288,13 +295,11 @@ export function VibeCard({
           <span className="reel-disc grid size-7 shrink-0 place-items-center rounded-full border border-foreground/60 bg-surface-2"><Disc3 className="size-5" /></span>
           <span className="min-w-0 overflow-hidden"><span className="reel-track"><span className="pr-8">Original sound · @{post.author.username}</span><span className="pr-8" aria-hidden="true">Original sound · @{post.author.username}</span></span></span>
         </div>
-        <div className="flex items-center gap-2">
-          {post.ratingCount > 0 ? (
-            <span className="text-xs text-muted-foreground">
-              {post.avgRating.toFixed(1)} · {post.ratingCount}
-            </span>
-          ) : null}
-        </div>
+        {post.aiStars != null ? (
+          <span className="text-xs font-semibold text-neon-pink" title="AI quality score">
+            AI ★ {post.aiStars}
+          </span>
+        ) : null}
       </div>
 
       <ReelActionSheet open={menuOpen} onOpenChange={setMenuOpen} post={post} />

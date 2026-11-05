@@ -19,13 +19,10 @@ export type FeedPost = {
   isVibe: boolean;
   likeCount: number;
   commentCount: number;
-  avgRating: number;
-  ratingCount: number;
   createdAt: string;
   author: Author;
   liked: boolean;
   saved: boolean;
-  myRating: number | null;
   followingAuthor: boolean;
   aiStars: number | null;
   aiFlagged: boolean;
@@ -66,7 +63,7 @@ export async function insertStory(supabase: Client, userId: string, input: { med
 }
 
 const POST_COLUMNS =
-  "id,user_id,media_url,media_type,caption,is_vibe,like_count,comment_count,avg_rating,rating_count,created_at,ai_stars,ai_flagged";
+  "id,user_id,media_url,media_type,caption,is_vibe,like_count,comment_count,created_at,ai_stars,ai_flagged";
 
 function toAuthor(row: {
   id: string;
@@ -91,17 +88,14 @@ async function decorate(
   const ids = rows.map((r) => r["id"] as string);
   const authorIds = Array.from(new Set(rows.map((r) => r["user_id"] as string)));
 
-  const empty = { data: [] as Array<{ post_id: string; stars?: number }> };
-  const [profiles, likes, saves, ratings, follows] = await Promise.all([
+  const empty = { data: [] as Array<{ post_id: string }> };
+  const [profiles, likes, saves, follows] = await Promise.all([
     supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", authorIds),
     userId
       ? supabase.from("likes").select("post_id").eq("user_id", userId).in("post_id", ids)
       : empty,
     userId
       ? supabase.from("saves").select("post_id").eq("user_id", userId).in("post_id", ids)
-      : empty,
-    userId
-      ? supabase.from("ratings").select("post_id,stars").eq("user_id", userId).in("post_id", ids)
       : empty,
     userId
       ? supabase.from("follows").select("following_id").eq("follower_id", userId).in("following_id", authorIds)
@@ -114,7 +108,6 @@ async function decorate(
   );
   const likedSet = new Set((likes.data ?? []).map((r) => r.post_id));
   const savedSet = new Set((saves.data ?? []).map((r) => r.post_id));
-  const ratingMap = new Map((ratings.data ?? []).map((r) => [r.post_id, r.stars] as const));
 
   return rows.map((r) => {
     const authorId = r["user_id"] as string;
@@ -127,15 +120,12 @@ async function decorate(
       isVibe: Boolean(r["is_vibe"]),
       likeCount: Number(r["like_count"] ?? 0),
       commentCount: Number(r["comment_count"] ?? 0),
-      avgRating: Number(r["avg_rating"] ?? 0),
-      ratingCount: Number(r["rating_count"] ?? 0),
       createdAt: r["created_at"] as string,
       author:
         authorMap.get(authorId) ??
         ({ id: authorId, username: "unknown", displayName: null, avatarUrl: null } as Author),
       liked: likedSet.has(r["id"] as string),
       saved: savedSet.has(r["id"] as string),
-      myRating: ratingMap.get(r["id"] as string) ?? null,
       followingAuthor: followSet.has(authorId),
       aiStars: r["ai_stars"] == null ? null : Number(r["ai_stars"]),
       aiFlagged: Boolean(r["ai_flagged"]),
@@ -151,9 +141,9 @@ function rank(posts: FeedPost[]): FeedPost[] {
       const ageHours = Math.max(0, (now - new Date(post.createdAt).getTime()) / 3_600_000);
       const recency = 1 / (1 + ageHours / 24);
       const engagement = (post.likeCount + post.commentCount * 2) / maxEngagement;
-      const quality = (post.avgRating - 3) / 2;
+      const quality = post.aiStars == null ? 0 : (post.aiStars - 3) / 2;
       let score = 0.5 * recency + 0.3 * engagement + 0.2 * quality;
-      if (post.avgRating >= 4 && post.ratingCount >= 5) score *= 1.5;
+      if (post.aiStars != null && post.aiStars >= 4) score *= 1.5;
       return { post, score };
     })
     .sort((a, b) => b.score - a.score)
@@ -182,7 +172,7 @@ async function loadRankedFeed(supabase: Client, userId: string | null, vibesOnly
 
   const rows = (data ?? []).filter((r) => !excluded.has(r.id as string));
   const decorated = await decorate(supabase, userId, rows as Array<Record<string, unknown>>);
-  return rank(decorated.filter((p) => !(p.myRating !== null && p.myRating <= 2)));
+  return rank(decorated);
 }
 
 export function getFeedFor(supabase: Client, userId: string | null) {
@@ -288,19 +278,6 @@ export async function insertComment(
   const { error } = await supabase
     .from("comments")
     .insert({ post_id: postId, user_id: userId, body });
-  if (error) throw new Error(error.message);
-  return { ok: true };
-}
-
-export async function upsertRating(
-  supabase: Client,
-  userId: string,
-  postId: string,
-  stars: number,
-) {
-  const { error } = await supabase
-    .from("ratings")
-    .upsert({ post_id: postId, user_id: userId, stars }, { onConflict: "post_id,user_id" });
   if (error) throw new Error(error.message);
   return { ok: true };
 }
